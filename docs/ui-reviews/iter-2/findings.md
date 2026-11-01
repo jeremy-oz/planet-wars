@@ -6,23 +6,43 @@ First iteration with a UI review loop, so there is no previous score to compare 
 
 | # | Question | Owner | Heuristic reviewer | Notes |
 |---|---|---|---|---|
-| 1 | Clarity of game state | _pending_ | 2 | which colour is you; numbers unlabelled |
-| 2 | Ease of sending fleets | _pending_ | 4 | |
-| 3 | Feedback on actions | _pending_ | 3 | |
-| 4 | Readability at a glance | _pending_ | 3 | count contrast 2.0–2.6:1 |
-| 5 | Menu navigation | _pending_ | 3 | |
-| 6 | Visual appeal | _pending_ | 4 | done-when needs ≥ 4 from the owner |
-| 7 | Audio | _pending_ | n/a | done-when needs ≥ 4 from the owner |
-| 8 | Onboarding | _pending_ | 2 | |
-| 9 | Performance feel | _pending_ | 3 | |
-| 10 | Play again tonight | _pending_ | 3 | |
+| 1 | Clarity of game state | ok | 2 | which colour is you; numbers unlabelled |
+| 2 | Ease of sending fleets | ok, but busy | 4 | |
+| 3 | Feedback on actions | ok | 3 | |
+| 4 | Readability at a glance | capture too quick | 3 | count contrast 2.0–2.6:1 |
+| 5 | Menu navigation | ok | 3 | |
+| 6 | Visual appeal | **below 4** | 4 | done-when needs ≥ 4 from the owner |
+| 7 | Audio | ok for now | n/a | done-when needs ≥ 4 from the owner |
+| 8 | Onboarding | ok | 2 | |
+| 9 | Performance feel | good | 3 | |
+| 10 | Play again tonight | **no** | 3 | |
 
 Reviewer scores are for the *before* build (`before/`); the owner scores the fixed build.
+
+## Owner survey, 2026-11-02 (verbatim)
+
+No numeric scores were given; the table above paraphrases. Answers as written:
+
+1. ok
+2. ok, but very busy from the beginning ie the levels are not clear
+3. audio is fine but we might find more / themes later
+4. change of sides is too quick (show one side number going down and then flipping to the other side number going up)
+5. ok (icons in sliders will be better)
+6. planets are not realistic (can we use real planets or stars from nasa? also backgrounds from real nasa photos, we should also create a theme later if we have enough related photos)
+7. ok for now
+8. ok
+9. good
+10. nope (not strong attraction or motivation, ie a reason to see or hear to play more)
+
+Reference given: Auralux gameplay video (https://youtu.be/XeyRrwR6C6k).
+
+**Done-when status:** not met. Visual appeal is below 4 (Q6) and the owner would not play a sixth game (Q10).
 
 ## Captures
 
 - **Before fixes:** `before/`, which is what the three reviewers saw.
-- **After fixes:** `screens/`, `game.mp4`, `frames.png` and `a11y/`.
+- **After round-1 fixes:** `round-1/` (screens, recording, frame sheet) and `a11y/`.
+- **After round-2 fixes (owner survey):** `screens/`, `game.mp4`, `frames.png`.
 - **Reviews:** in `reviews/`: heuristic, accessibility, first-time player.
 
 Two reviewer findings were capture artefacts, not game bugs:
@@ -60,3 +80,26 @@ Also fixed, because two reviewers raised it as the main reason a new player lose
 | Jargon on setup ("Greedy", "Map seed") | Iteration 4 | Map seeds as shareable strings and difficulty presets are redesigned there. |
 | Fleet clutter on huge maps | Iteration 7 | Art pass. Fleets are now GPU-drawn, so LOD is cheap to add later. |
 | Confirmation before Restart / Main menu | Iteration 4 | Low risk in single-player. Needed once games are online. |
+
+## Round 2 — the owner's survey, fixed now
+
+The owner's answers (above) failed the done-when on two counts: visual appeal under 4, and no wish to play a sixth game. Follow-up answers, 2026-11-02: "levels are not clear" meant **both** game levels and planet levels; the long-term hook is "visit a constellation … grow in skills … stars become harder"; for now, "call it training in our own solar system".
+
+1. **No reason to play again (Q10), no clear levels (Q2).** A **Training** ladder: nine levels flying out from Earth, the Moon to Pluto, each with a one-line brief that teaches one idea. The first level has five planets and one weak bot; the last is 24 planets and two sharp commanders. You always launch from Earth and the enemy holds the named world. Wins earn 1–3 stars by time, the next world unlocks, and progress is kept on this computer. TRAINING is now the first button on the main menu; the old setup is SKIRMISH. Every level is tested winnable by a bot in your seat, inside the 3-star par.
+2. **Planets are not realistic (Q6).** Planets are now **real NASA surface maps** (Earth, Mars, Jupiter, Io, Europa, Pluto … 18 worlds) on a lit, turning sphere. Owners show as a colour wash, an atmosphere halo and coloured level dots. Backgrounds are dimmed **Hubble and Webb photographs** (Cosmic Cliffs, Pillars of Creation, Carina, Whirlpool). Ship counts moved under each planet so the surface shows. Sources and credits: `game/art/CREDITS.md`, from `tools/fetch_art.py`.
+3. **Captures change sides too fast (Q4).** A capture plays in two beats: the defender's count drains to zero in their colour (0.5 s), then the planet flips and counts up in yours (0.4 s). The flash, ripple and chime land on the flip.
+
+Also fixed:
+
+- **Planet levels (Q2).** The growth arc became 1–5 dots orbiting each planet: one dot per level, the same on every planet. Level 2's brief explains it.
+- **Slider icons (Q5).** Music, Effects and Interface have drawn icons. The speaker's waves follow the volume, and clicking an icon mutes or restores that channel.
+
+**Round-1 fix 3 revisited.** Neutral planets were hollow discs. They are now real grey rock, desaturated, with no atmosphere and grey level dots, while owned worlds always have a coloured halo. Neutral versus owned still does not depend on hue.
+
+### Deferred from the owner's survey
+
+| Finding | To | Why |
+|---|---|---|
+| Constellation campaign, skills that grow, harder stars | Iteration 5 | The plan's campaign (20 maps, bot ladder) and player powers are Iteration 5. Training is the first chapter of that campaign. |
+| More audio, themes (Q3, "ok for now") | Iteration 7 | The original soundtrack with adaptive layers is Iteration 7. A photo theme per chapter can come with the constellations. |
+| Themes built from related photos (Q6) | Iteration 5 | Each constellation chapter gets its own backdrop set. `fetch_art.py` already takes any NASA, ESA/Webb or ESA/Hubble image. |

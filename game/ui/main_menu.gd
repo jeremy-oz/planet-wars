@@ -25,7 +25,9 @@ func _ready() -> void:
 	var bg := CanvasLayer.new()
 	bg.layer = -10
 	add_child(bg)
-	bg.add_child(Starfield.new())
+	var sky := Starfield.new()
+	sky.backdrop = "cosmic-cliffs"
+	bg.add_child(sky)
 	_holder = Node2D.new()
 	add_child(_holder)
 	_view = MapView.new()
@@ -58,8 +60,12 @@ func _ready() -> void:
 	buttons.add_theme_constant_override("separation", 14)
 	buttons.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	col.add_child(buttons)
-	var play := UiKit.button("PLAY", "PrimaryButton", 300.0)
-	play.pressed.connect(func() -> void: main.goto_setup())
+	var play := UiKit.button("TRAINING", "PrimaryButton", 300.0)
+	play.pressed.connect(func() -> void: main.goto_training())
+	play.tooltip_text = "nine levels across our solar system"
+	var skirmish := UiKit.button("SKIRMISH", "", 300.0)
+	skirmish.pressed.connect(func() -> void: main.goto_setup())
+	skirmish.tooltip_text = "your own map, bots and difficulty"
 	var online := UiKit.button("PLAY ONLINE", "", 300.0)
 	online.disabled = true
 	online.tooltip_text = "Online play arrives in the next update."
@@ -67,7 +73,7 @@ func _ready() -> void:
 	settings.pressed.connect(func() -> void: main.open_settings())
 	var quit := UiKit.button("QUIT", "GhostButton", 300.0)
 	quit.pressed.connect(func() -> void: get_tree().quit())
-	for b in [play, online, settings, quit]:
+	for b in [play, skirmish, online, settings, quit]:
 		buttons.add_child(b)
 	var soon := UiKit.label("online play arrives in the next update", "CaptionLabel")
 	soon.add_theme_color_override("font_color", Palette.DUSK)
@@ -78,7 +84,7 @@ func _ready() -> void:
 	var footer := UiKit.label("v%s  ·  a game for friends  ·  no accounts, no tracking" % ProjectSettings.get_setting("application/config/version", "0"), "CaptionLabel")
 	col.add_child(footer)
 	UiKit.stagger_in([title, subtitle], 0.05, 0.08, 0.4)
-	UiKit.stagger_in([play, online, settings, quit], 0.25)
+	UiKit.stagger_in([play, skirmish, online, settings, quit], 0.25)
 	UiKit.stagger_in([footer], 0.5)
 	get_viewport().size_changed.connect(_fit_demo)
 	if main and main.audio:
@@ -88,7 +94,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if (event as InputEventKey).keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
-			main.goto_setup()
+			main.goto_training()
 
 
 func _process(delta: float) -> void:

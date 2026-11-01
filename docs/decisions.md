@@ -49,3 +49,16 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - A demo driver plays the human seat through the real UI path (selection, drag line, send) with a visible cursor — the 60 s review recording shows interaction feedback, not just bots.
 - Tests run on the first frame of the SceneTree, not in `_initialize` — only then is the root in the tree, so screen smoke tests get real `_ready()` calls.
 - Settings are kept in memory only — persisting them is in Iteration 4's scope.
+
+### Iteration 2, round 2 (owner survey)
+
+- Planets are drawn with real surface maps (NASA public domain; Uranus from Solar System Scope, CC BY 4.0) on a shader sphere — the owner asked for real planets; one Texture2DArray keeps all 200 planets in a single draw call.
+- Backdrops are Hubble/Webb photographs (CC BY 4.0) drawn at about 20 % brightness — real, but play must stay readable; "very busy" was part of the same survey.
+- Images are fetched and converted by `tools/fetch_art.py` and committed with `game/art/CREDITS.md` — like the audio, a fresh clone needs no network, and every image has a recorded source and licence.
+- Ownership is a colour wash, an atmosphere halo and coloured level dots, not a fully recoloured planet — the real surface is the point; the halo keeps owned vs neutral independent of hue.
+- Ship counts sit under planets, not on them — the surface would otherwise be hidden behind the number.
+- Captures animate in two beats (drain in the defender's colour, then flip and count up) — owner Q4. Visual only; the sim still resolves arrivals in one tick.
+- Training (nine solar-system levels) is pulled forward from Iteration 5's campaign — the owner would not play a sixth game without a reason to; the plan's done-when needs that. Constellations and skills stay in Iteration 5.
+- Training progress is saved to `user://progress.cfg` now, ahead of Iteration 4's settings persistence — unlocks are meaningless if they reset every launch.
+- Star pars are multiples of a Greedy bot's time in your seat (3★ ≈ 3.5×+10 s, 2★ ≈ 6×+20 s) — a bot reacts every tick, so its time is a floor; a test keeps every level winnable by it inside the 3-star par.
+- A level's enemy is keyed by seat, not planet id — hand-made maps list the enemy home last.

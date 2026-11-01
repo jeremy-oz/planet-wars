@@ -8,12 +8,15 @@ extends Node2D
 signal send_requested(sources: PackedInt32Array, destination: int)
 signal selection_changed
 signal denied(planet: int)
+## A captured planet's count reached zero and it changed colour (after FLIP_DRAIN).
+signal flipped(planet: int, owner: int, owner_before: int)
 
 const Palette := preload("res://game/theme/palette.gd")
 const Textures := preload("res://game/fx/textures.gd")
 const DrawLayer := preload("res://game/fx/draw_layer.gd")
 const FleetRenderer := preload("res://game/fx/fleet_renderer.gd")
 const PlanetRenderer := preload("res://game/fx/planet_renderer.gd")
+const Bodies := preload("res://game/fx/bodies.gd")
 const MAX_FX := 160
 const NEUTRAL_TEXT := Color("#C9D0DE")
 const WIN_COLOR := Color("#7FE3B5")
@@ -25,6 +28,10 @@ const HUMAN := 1
 const DRAG_THRESHOLD := 8.0  # screen px before a press becomes a drag
 const COUNT_TIME := 0.07  # ship-count tween time constant (settles in ~220 ms)
 const COLOR_TIME := 0.07  # ownership cross-fade time constant
+## Captures play out in two beats: the defender's count drains to zero in their colour, then the
+## planet flips and counts up in the attacker's colour (owner survey, iteration 2, Q4).
+const FLIP_DRAIN := 0.5
+const FLIP_RISE := 0.4
 const EXO := preload("res://game/fonts/Exo2-Variable.ttf")
 
 var world: World
@@ -49,6 +56,10 @@ var _cursor := Vector2.ZERO
 var _drag_sources: PackedInt32Array = []
 
 var _shown := PackedFloat32Array()
+var _shown_owner := PackedInt32Array()  # owner as drawn; lags the sim during a capture's drain
+var _flip := PackedFloat32Array()  # seconds since this planet was captured
+var _flip_from := PackedFloat32Array()  # count shown when the capture landed
+var _body := PackedInt32Array()  # Bodies layer per planet
 var _color: Array[Color] = []
 var _pop := PackedFloat32Array()
 var _squash := PackedFloat32Array()
@@ -97,10 +108,15 @@ func _ready() -> void:
 
 
 ## Point the view at a world. Safe to call again for a new match.
-func bind(p_world: World) -> void:
+## `homes` maps seat -> body name (game/fx/bodies.gd) for that seat's starting planet.
+func bind(p_world: World, homes: Dictionary = {}) -> void:
 	world = p_world
 	var n := world.planets.size()
 	_shown.resize(n)
+	_shown_owner.resize(n)
+	_flip.resize(n)
+	_flip_from.resize(n)
+	_body = Bodies.assign(world, homes)
 	_pop.resize(n)
 	_squash.resize(n)
 	_phase.resize(n)
@@ -114,6 +130,8 @@ func bind(p_world: World) -> void:
 				nearest = minf(nearest, world.planets[i].position.distance_to(world.planets[j].position))
 		_radius[i] = minf(radius_for(world.planets[i].growth), nearest * UNIT * 0.36)
 		_shown[i] = world.planets[i].ships
+		_shown_owner[i] = world.planets[i].owner
+		_flip[i] = 10.0
 		_pop[i] = 10.0
 		_squash[i] = 10.0
 		_deny[i] = 10.0
@@ -203,10 +221,26 @@ func _process(delta: float) -> void:
 	var k_color := 1.0 - exp(-delta / COLOR_TIME)
 	for i in range(world.planets.size()):
 		var p := world.planets[i]
-		_shown[i] = lerpf(_shown[i], float(p.ships), k_count)
-		if absf(_shown[i] - p.ships) < 0.5:
-			_shown[i] = p.ships
-		_color[i] = _color[i].lerp(Palette.player_color(p.owner), k_color)
+		if _flip[i] < FLIP_DRAIN + FLIP_RISE:
+			_flip[i] += delta
+			var t := _flip[i]
+			if t < FLIP_DRAIN:
+				var e := t / FLIP_DRAIN
+				_shown[i] = _flip_from[i] * (1.0 - e * e * (3.0 - 2.0 * e))
+			else:
+				if _shown_owner[i] != p.owner:
+					var before := _shown_owner[i]
+					_shown_owner[i] = p.owner
+					_color[i] = Palette.player_color(p.owner).lerp(Palette.ICE, 0.35)
+					flipped.emit(i, p.owner, before)
+				var e := clampf((t - FLIP_DRAIN) / FLIP_RISE, 0.0, 1.0)
+				_shown[i] = float(p.ships) * (1.0 - pow(1.0 - e, 3.0))
+		else:
+			_shown_owner[i] = p.owner
+			_shown[i] = lerpf(_shown[i], float(p.ships), k_count)
+			if absf(_shown[i] - p.ships) < 0.5:
+				_shown[i] = p.ships
+		_color[i] = _color[i].lerp(Palette.player_color(_shown_owner[i]), k_color)
 		_pop[i] += delta
 		_squash[i] += delta
 		_deny[i] += delta
@@ -402,11 +436,19 @@ func on_events(events: Array) -> void:
 				var r := planet_radius(id)
 				match str(e["kind"]):
 					"capture":
-						_pop[id] = 0.0
+						# Impact now; flash, ripple and pop land on the flip (negative t = delayed).
+						if not reduced_motion:
+							_flip_from[id] = _shown[id]
+							_flip[id] = 0.0
+						var d := -FLIP_DRAIN if not reduced_motion else 0.0
+						_pop[id] = d
 						var c := Palette.player_color(int(e["owner"]))
-						_fx.append({"type": "flash", "pos": pos, "r": r, "t": 0.0, "dur": 0.18, "color": Palette.ICE})
-						_fx.append({"type": "ripple", "pos": pos, "r": r, "t": 0.0, "dur": 0.55, "color": c})
-						_fx.append({"type": "ripple", "pos": pos, "r": r, "t": -0.12, "dur": 0.55, "color": c})
+						_add_ring_sparks(id, Palette.player_color(int(e["owner_before"])), int(e["involved"]))
+						_fx.append({"type": "flash", "pos": pos, "r": r, "t": d, "dur": 0.18, "color": Palette.ICE})
+						_fx.append({"type": "ripple", "pos": pos, "r": r, "t": d, "dur": 0.55, "color": c})
+						_fx.append({"type": "ripple", "pos": pos, "r": r, "t": d - 0.12, "dur": 0.55, "color": c})
+						if reduced_motion:
+							flipped.emit(id, int(e["owner"]), int(e["owner_before"]))
 					"battle":
 						if not crowded or int(e["involved"]) > 40:
 							_add_ring_sparks(id, Palette.player_color(world.planets[id].owner), int(e["involved"]))
@@ -437,7 +479,7 @@ func _visual_radius(i: int) -> float:
 	var base := planet_radius(i)
 	var breath := 1.0 if reduced_motion else 1.0 + 0.02 * sin(_time * TAU / 4.0 + _phase[i])
 	var pop := 1.0
-	if _pop[i] < 0.4:
+	if _pop[i] >= 0.0 and _pop[i] < 0.4:
 		var e := _pop[i] / 0.4
 		pop = 1.0 + 0.18 * sin(e * PI) * (1.0 - 0.4 * e)
 	var squash := 1.0
@@ -460,7 +502,7 @@ func _paint_glow(ci: CanvasItem) -> void:
 		var r := _visual_radius(i)
 		var a := 0.0
 		var c := _color[i]
-		if p.owner != 0:
+		if _shown_owner[i] != 0:
 			a = 0.36 + 0.06 * sin(_time * TAU / 6.0 + _phase[i])
 		elif i == hover or i == drag_target():
 			a = 0.16
@@ -495,10 +537,10 @@ func _update_planets() -> void:
 			flags |= 2
 		if i == target:
 			flags |= 4
-		if p.owner == 0:
+		if _shown_owner[i] == 0:
 			flags |= 8
-		var rot := (0.0 if reduced_motion else _time * (0.2 + 0.1 * p.growth)) + _phase[i]
-		_planets.set_planet(i, pos, r, (r + margin) * 1.06, _color[i], p.growth, flags, fposmod(rot, TAU))
+		var spin := (0.0 if reduced_motion else _time * 0.08) + _phase[i]
+		_planets.set_planet(i, pos, r, (r + margin) * 1.06, _color[i], p.growth, flags, fposmod(spin, TAU * 10.0), _body[i])
 
 
 func _paint_fx(ci: CanvasItem) -> void:
@@ -565,15 +607,17 @@ func _paint_overlay(ci: CanvasItem) -> void:
 		var r := _visual_radius(i)
 		if r * screen_scale < 9.0 and i != hover and not selection.has(i):
 			continue
-		var fs := int(minf(maxf(r * 0.74, 15.0 / screen_scale), r * 1.5))
+		# Counts sit under the planet, below the level orbit, so the real surface stays visible.
+		var fs := int(maxf(15.0 / screen_scale, minf(r * 0.5, 21.0 / screen_scale)))
 		var text := str(int(round(_shown[i])))
 		var w := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		var base := p.position * UNIT + Vector2(-w * 0.5, fs * 0.36)
+		var below := r + maxf(6.0 / screen_scale, 7.0) + (maxf(12.0 / screen_scale, 13.0) if selection.has(i) or i == drag_target() else 0.0)
+		var base := p.position * UNIT + Vector2(-w * 0.5, below + fs * 0.92)
 		if _deny[i] < 0.35:
 			base.x += sin(_deny[i] * 60.0) * _px(3.0) * (1.0 - _deny[i] / 0.35)
 		var outline := maxi(int(_px(4.0)), 3)
 		ci.draw_string_outline(_font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, outline, Color(Palette.VOID, 0.7))
-		ci.draw_string(_font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.ICE if p.owner != 0 else NEUTRAL_TEXT)
+		ci.draw_string(_font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.ICE if _shown_owner[i] != 0 else NEUTRAL_TEXT)
 	if _dragging:
 		var target := drag_target()
 		var step := _px(16.0, 12.0)

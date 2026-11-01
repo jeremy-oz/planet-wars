@@ -9,8 +9,16 @@ Built for human players online, self-hosted, no telemetry. See `PLAN.md` for the
 godot --path .          # or open project.godot in the editor and press F5
 ```
 
+Start with **Training**: nine short levels across our solar system, from the Moon to Pluto. You
+launch from Earth; take every planet to win, faster for more stars. **Skirmish** sets up your own
+map, bots and difficulty.
+
 Drag from your blue planet to another to send ships. Click to select, click a target to send;
-1–4 set how much to send; space pauses; Esc opens the menu.
+1–4 set how much to send; space pauses; Esc opens the menu. The dots around a planet are its
+level: more dots, more ships grown.
+
+Planet surfaces are NASA maps and the skies are Hubble and Webb photographs; see
+[`game/art/CREDITS.md`](game/art/CREDITS.md).
 
 ## Develop
 
@@ -40,3 +48,5 @@ Open the project in the Godot editor from `project.godot`.
 ## Licence
 
 Code MIT, assets CC-BY (to be formalised in Iteration 8). Fonts are SIL OFL (see `game/fonts/`).
+Images in `game/art/` keep their own terms: NASA public domain, or CC BY 4.0 with the credit in
+`game/art/CREDITS.md`.

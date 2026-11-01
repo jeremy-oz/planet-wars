@@ -1,6 +1,11 @@
-## Parallax starfield with soft nebulae (docs/STYLE_GUIDE.md §1, mood board 07).
-## Each layer is drawn once into a 2×2 tile block; scrolling only moves the layer nodes.
+## The sky: a real Hubble/Webb photograph (game/art/backdrops, see CREDITS.md), dimmed so play
+## stays readable, under parallax star layers. Star layers are drawn once into a 2×2 tile block;
+## scrolling only moves the layer nodes.
 extends Node2D
+
+const BACKDROPS: PackedStringArray = ["cosmic-cliffs", "pillars-webb", "carina", "pillars-hubble", "whirlpool"]
+## How bright the photo is drawn: enough to feel real, dark enough that planets and counts win.
+const BACKDROP_TINT := Color(0.2, 0.21, 0.25)
 
 const Palette := preload("res://game/theme/palette.gd")
 const Textures := preload("res://game/fx/textures.gd")
@@ -22,9 +27,21 @@ var reduced := false
 var _layers: Array = []
 var _time := 0.0
 var _camera := Vector2.ZERO
+## Name from BACKDROPS (or "" for stars only). Set before the node enters the tree.
+var backdrop := "cosmic-cliffs"
+var _photo: Sprite2D
+
+
+static func backdrop_for_seed(seed: int) -> String:
+	return BACKDROPS[posmod(seed, BACKDROPS.size())]
 
 
 func _ready() -> void:
+	if backdrop != "":
+		_photo = Sprite2D.new()
+		_photo.texture = load("res://game/art/backdrops/%s.jpg" % backdrop)
+		_photo.modulate = BACKDROP_TINT
+		add_child(_photo)
 	for i in range(LAYERS.size()):
 		var layer := DrawLayer.new()
 		if i == 0:
@@ -46,6 +63,14 @@ func scroll(camera_screen_pos: Vector2) -> void:
 
 
 func _apply() -> void:
+	if _photo != null and _photo.texture != null:
+		var view := get_viewport_rect().size
+		var tex := _photo.texture.get_size()
+		var cover := maxf(view.x / tex.x, view.y / tex.y) * 1.12
+		_photo.scale = Vector2(cover, cover)
+		var slack := (tex * cover - view) * 0.5
+		var off := -_camera * 0.015 + (Vector2.ZERO if reduced else Vector2(sin(_time * 0.02), cos(_time * 0.017)) * 0.4 * slack)
+		_photo.position = view * 0.5 + off.clamp(-slack, slack)
 	for i in range(_layers.size()):
 		var f: float = LAYERS[i][0]
 		var off := -_camera * f + drift * _time * f * 4.0
@@ -57,6 +82,8 @@ func _paint(ci: CanvasItem, i: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = star_seed * 97 + i
 	if i == 0:
+		if backdrop != "":
+			return
 		var glow := Textures.glow()
 		var tints := [Palette.PLAYERS[1], Palette.PLAYERS[3], Palette.PLAYERS[4], Palette.PLAYERS[1], Palette.PLAYERS[3]]
 		var blobs: Array = []

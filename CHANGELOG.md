@@ -4,6 +4,20 @@ All notable changes to Planet Wars. Format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Added — Iteration 2, round 2 (owner survey)
+- Training: our solar system. Nine levels from the Moon to Pluto, each with a one-line brief,
+  1–3 stars by time, unlocks in order, progress kept on this computer. TRAINING leads the menu;
+  the custom setup is now SKIRMISH. Result screen shows stars and NEXT / RETRY / TRAINING.
+- Real worlds: 18 NASA surface maps on lit, turning spheres (you are always Earth); Hubble and
+  Webb photographs as dimmed backdrops. `tools/fetch_art.py`, credits in `game/art/CREDITS.md`.
+- Planet levels shown as 1–5 orbiting dots on every planet.
+- Volume sliders have icons; clicking one mutes or restores that channel.
+
+### Changed
+- Captures play in two beats: the defender's count drains to zero, then the planet flips colour
+  and counts up; flash, ripple and chime land on the flip.
+- Ship counts sit under planets so the surface is visible.
+
 ### Added — Iteration 2, playable single-player
 - Play against 1–3 bots (Random, Nearest, Greedy) at Relaxed, Normal or Sharp, on Small, Medium,
   Large or Huge (200-planet) maps from any seed, with a live preview on the setup screen.

@@ -3,6 +3,8 @@
 | file | what |
 |---|---|
 | screens/01_main_menu.png | main menu |
+| screens/01b_training.png | training |
+| screens/01c_level_1.png | level 1 |
 | screens/02_setup.png | setup |
 | screens/03_settings.png | settings |
 | screens/04_game_start.png | game start |
@@ -11,6 +13,7 @@
 | screens/07_victory.png | victory |
 | screens/08_defeat.png | defeat |
 | screens/09_game_huge.png | game huge |
+| screens/10_training_after_win.png | training after win |
 | game.mp4 | 60 s demo match, a scripted cursor plays the blue seat through the real UI |
 | frames/ , frames.png | one frame every 5 s of that recording |
 

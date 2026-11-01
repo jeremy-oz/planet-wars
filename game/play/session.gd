@@ -52,14 +52,24 @@ static func make_bot(kind: String, bot_seed: int) -> RefCounted:
 func _init(p_config: Dictionary = {}) -> void:
 	config = default_config()
 	config.merge(p_config, true)
-	var players: int = 1 + clampi(int(config["opponents"]), 1, 7)
-	var planet_count: int = int(MAP_SIZES.get(config["map"], 24))
 	var map_seed: int = int(config["seed"])
-	var size_scale := sqrt(maxf(1.0, planet_count / 16.0))
-	world = MapText.parse(MapGenerator.generate(map_seed, players, planet_count, Vector2(30.0, 20.0) * size_scale), map_seed)
+	var players: int
+	if config.has("map_text"):
+		# Hand-made map (training levels): the seat count comes from the map itself.
+		world = MapText.parse(str(config["map_text"]), map_seed)
+		assert(world != null, MapText.last_error)
+		players = world.num_players
+	else:
+		players = 1 + clampi(int(config["opponents"]), 1, 7)
+		var planet_count: int = int(config.get("planets", MAP_SIZES.get(config["map"], 24)))
+		var size_scale := sqrt(maxf(1.0, planet_count / 16.0))
+		world = MapText.parse(MapGenerator.generate(map_seed, players, planet_count, Vector2(30.0, 20.0) * size_scale), map_seed)
 	world.max_ticks = int(config.get("max_ticks", 1 << 30))
+	# `bots` (one kind per opponent seat) overrides the single `bot` kind.
+	var kinds: Array = config.get("bots", [])
 	for p in range(2, players + 1):
-		bots[p] = make_bot(str(config["bot"]), map_seed * 31 + p)
+		var kind := str(kinds[p - 2]) if p - 2 < kinds.size() else str(config["bot"])
+		bots[p] = make_bot(kind, map_seed * 31 + p)
 	for p in range(1, players + 1):
 		stats[p] = {"produced": 0, "fleets": 0, "ships_sent": 0, "captured": 0, "lost": 0, "peak_planets": world.planet_count(p)}
 	_record_history()

@@ -2,16 +2,25 @@
 extends "res://game/ui/overlay_base.gd"
 
 const HistoryChart := preload("res://game/ui/history_chart.gd")
+const StarRow := preload("res://game/ui/star_row.gd")
 
 signal rematch
 signal new_map
 signal main_menu
+signal next_level
+signal training
 
 var won := false
 var stats: Dictionary = {}  # the human's stats from Session
 var history: Array = []
 var seconds := 0.0
 var opponents := 1
+## Training levels: set level_title to switch the overlay to stars and NEXT / RETRY / TRAINING.
+var level_title := ""
+var stars_earned := 0
+var par: Array = []
+var new_best := false
+var next_title := ""
 
 
 func _ready() -> void:
@@ -21,7 +30,27 @@ func _ready() -> void:
 	column.add_child(title)
 	var who := "opponent" if opponents == 1 else "opponents"
 	var line := ("you outlasted %d %s in %s" % [opponents, who, _clock(seconds)]) if won else ("you held on for %s" % _clock(seconds))
+	if level_title != "":
+		line = "%s  ·  %s in %s" % [level_title, "won" if won else "lost", _clock(seconds)]
 	column.add_child(UiKit.label(line, "SubtitleLabel"))
+	if level_title != "":
+		var stars := StarRow.new()
+		stars.earned = stars_earned
+		stars.star_size = 22.0
+		stars.animate = true
+		stars.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		column.add_child(stars)
+		var note := ""
+		if won and stars_earned < 3 and par.size() == 2:
+			note = "win within %s for %s" % [_clock(float(par[1]) if stars_earned == 2 else float(par[0])), "3 stars" if stars_earned == 2 else "2 stars"]
+		elif won and stars_earned == 3:
+			note = "a perfect run"
+		elif not won:
+			note = "every planet you take grows more ships — expand early, then strike"
+		if new_best and won:
+			note = "new best  ·  " + note
+		if note != "":
+			column.add_child(UiKit.label(note, "CaptionLabel"))
 	var grid := GridContainer.new()
 	grid.columns = 5
 	grid.add_theme_constant_override("h_separation", 34)
@@ -53,6 +82,10 @@ func _ready() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	var items := [["MAIN MENU", "GhostButton", main_menu], ["REMATCH", "", rematch], ["NEW MAP", "PrimaryButton", new_map]]
+	if level_title != "":
+		items = [["TRAINING", "GhostButton", training], ["RETRY", "" if next_title != "" else "PrimaryButton", rematch]]
+		if next_title != "":
+			items.append(["NEXT: " + next_title.to_upper(), "PrimaryButton", next_level])
 	var buttons: Array = []
 	for it: Array in items:
 		var b := UiKit.button(it[0], it[1], 190.0)

@@ -1,6 +1,7 @@
 ## Entry point: owns audio, settings, screen switching (300 ms fade through the void), and the
 ## tooling modes used by tools/capture.py and `make perf`:
 ##   -- --capture-screens <dir>   walk every screen and save PNGs
+##   -- --quick-shots <dir>       three frames of the demo game (art iteration)
 ##   -- --demo                    endless match with a fake cursor (for the 60 s recording)
 ##   -- --perf [<report path>]    200-planet stress test, vsync off, frame-time report
 extends Node
@@ -12,12 +13,15 @@ const MainMenu := preload("res://game/ui/main_menu.gd")
 const SetupScreen := preload("res://game/ui/setup_screen.gd")
 const GameScreen := preload("res://game/play/game_screen.gd")
 const SettingsOverlay := preload("res://game/ui/settings_overlay.gd")
+const TrainingScreen := preload("res://game/ui/training_screen.gd")
+const Progress := preload("res://game/training/progress.gd")
 
 const DEMO_CONFIG := {"seed": 5, "opponents": 3, "bot": "greedy", "difficulty": "normal", "map": "medium", "demo_cursor": true}
 
 var audio: Node
 var settings := {"music": 0.7, "sfx": 0.8, "ui": 0.6, "fullscreen": false}
-var last_config: Dictionary = {}
+var last_config: Dictionary = {}  ## last skirmish setup (training levels are not kept here)
+var progress := Progress.new()
 var current: Node = null
 var _fade: ColorRect
 var _overlay_layer: CanvasLayer
@@ -47,6 +51,9 @@ func _ready() -> void:
 	if args.has("--capture-screens"):
 		var i := args.find("--capture-screens")
 		_capture(args[i + 1] if i + 1 < args.size() else "user://capture")
+	elif args.has("--quick-shots"):
+		var k := args.find("--quick-shots")
+		_quick_shots(args[k + 1] if k + 1 < args.size() else "user://quick")
 	elif args.has("--demo"):
 		start_game(DEMO_CONFIG.duplicate(), false)
 	elif args.has("--perf"):
@@ -73,8 +80,15 @@ func goto_setup(animated: bool = true) -> void:
 	_show(s, animated)
 
 
+func goto_training(animated: bool = true) -> void:
+	var t := TrainingScreen.new()
+	t.main = self
+	_show(t, animated)
+
+
 func start_game(config: Dictionary, animated: bool = true) -> void:
-	last_config = config.duplicate()
+	if not config.has("level"):
+		last_config = config.duplicate()
 	var g := GameScreen.new()
 	g.main = self
 	g.config = config
@@ -131,9 +145,19 @@ func _shot(dir: String, shot_name: String) -> void:
 
 func _capture(dir: String) -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
+	# Captures never touch the player's real training progress.
+	var scratch := "user://capture_progress.cfg"
+	DirAccess.remove_absolute(scratch)
+	progress = Progress.new(scratch)
 	goto_menu(false)
 	await _wait(2.4)
 	await _shot(dir, "01_main_menu")
+	goto_training()
+	await _wait(1.6)
+	await _shot(dir, "01b_training")
+	start_game(preload("res://game/training/levels.gd").config(0))
+	await _wait(2.2)
+	await _shot(dir, "01c_level_1")
 	last_config = DEMO_CONFIG.duplicate()
 	goto_setup()
 	await _wait(1.2)
@@ -154,8 +178,11 @@ func _capture(dir: String) -> void:
 	await _shot(dir, "06_pause")
 	g.close_pause()
 	await _wait(0.3)
-	# a real win: the blue seat on autopilot against one Random bot, played out at 4×
-	start_game({"seed": 14, "opponents": 1, "bot": "random", "difficulty": "relaxed", "map": "small", "autopilot": true, "speed_index": 3})
+	# a real win: training level 2 (Mercury) with the blue seat on autopilot, played out at 4×
+	var mercury := preload("res://game/training/levels.gd").config(1)
+	mercury["autopilot"] = true
+	mercury["speed_index"] = 3
+	start_game(mercury)
 	var guard := 0
 	while not current._ended and guard < 600:
 		await _wait(0.1)
@@ -174,6 +201,29 @@ func _capture(dir: String) -> void:
 	start_game(huge)
 	await _wait(9.0)
 	await _shot(dir, "09_game_huge")
+	goto_training()
+	await _wait(1.6)
+	await _shot(dir, "10_training_after_win")
+	DirAccess.remove_absolute(scratch)
+	get_tree().quit()
+
+
+## Dev loop: the menu, the training map, level 1 and a busy demo game, for checking art changes
+## without the full capture walk (about 25 s).
+func _quick_shots(dir: String) -> void:
+	DirAccess.make_dir_recursive_absolute(dir)
+	goto_menu(false)
+	await _wait(2.4)
+	await _shot(dir, "a_menu")
+	goto_training(false)
+	await _wait(1.4)
+	await _shot(dir, "b_training")
+	start_game(preload("res://game/training/levels.gd").config(0), false)
+	await _wait(2.0)
+	await _shot(dir, "c_level1")
+	start_game(DEMO_CONFIG.duplicate(), false)
+	await _wait(12.0)
+	await _shot(dir, "d_game")
 	get_tree().quit()
 
 

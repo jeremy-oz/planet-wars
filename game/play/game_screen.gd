@@ -8,6 +8,7 @@ const UiKit := preload("res://game/ui/ui_kit.gd")
 const Session := preload("res://game/play/session.gd")
 const MapView := preload("res://game/play/map_view.gd")
 const Starfield := preload("res://game/play/starfield.gd")
+const Levels := preload("res://game/training/levels.gd")
 const ShareBar := preload("res://game/ui/share_bar.gd")
 const PauseOverlay := preload("res://game/ui/pause_overlay.gd")
 const ResultOverlay := preload("res://game/ui/result_overlay.gd")
@@ -39,6 +40,7 @@ var _game_seconds := 0.0
 var _ended := false
 var _overlay: Control = null
 var _shake := 0.0
+var _chimes := 0  # capture chimes this tick
 var _rng := RandomNumberGenerator.new()
 var _sent_once := false
 var _fit_zoom := 1.0
@@ -63,13 +65,15 @@ func _ready() -> void:
 	bg.layer = -10
 	add_child(bg)
 	_starfield = Starfield.new()
+	_starfield.backdrop = str(config.get("backdrop", Starfield.backdrop_for_seed(int(config.get("seed", 1)))))
 	bg.add_child(_starfield)
 	map_view = MapView.new()
 	add_child(map_view)
-	map_view.bind(session.world)
+	map_view.bind(session.world, config.get("homes", {}))
 	map_view.send_requested.connect(_on_send)
 	map_view.denied.connect(_on_denied)
 	map_view.selection_changed.connect(_on_selection_changed)
+	map_view.flipped.connect(_on_flipped)
 	map_view.you_marker = 0.0 if (bool(config.get("autopilot", false))) else 6.0
 	camera = Camera2D.new()
 	add_child(camera)
@@ -134,7 +138,7 @@ func _step() -> void:
 ## Sounds and camera shake for this tick's events. Capped so a 200-planet war stays musical.
 func _react(events: Array) -> void:
 	var audio: Node = main.audio if main else null
-	var chimes := 0
+	_chimes = 0
 	var whooshes := 0
 	for e: Dictionary in events:
 		match str(e["type"]):
@@ -144,20 +148,13 @@ func _react(events: Array) -> void:
 					whooshes += 1
 			"arrival":
 				var id: int = e["planet"]
-				var g: int = session.world.planets[id].growth
 				var involved: int = e["involved"]
 				var mine := int(e["owner"]) == HUMAN or int(e["owner_before"]) == HUMAN
 				match str(e["kind"]):
 					"capture":
-						if audio and chimes < 3:
-							if int(e["owner"]) == HUMAN:
-								audio.chime(5 - g, -2.0)
-							elif int(e["owner_before"]) == HUMAN:
-								audio.chime(5 + (5 - g), -4.0)
-								audio.play("thud", -6.0)
-							else:
-								audio.chime(5 + (5 - g), -14.0)
-							chimes += 1
+						# The chime waits for the flip (map_view.flipped); the impact lands now.
+						if audio and mine:
+							audio.play("thud", -10.0, _rng.randf_range(0.9, 1.1))
 						if mine:
 							_shake = maxf(_shake, clampf(float(involved) / 70.0, 0.25, 1.0) * 7.0)
 					"battle":
@@ -165,6 +162,23 @@ func _react(events: Array) -> void:
 							audio.play("thud", -10.0, _rng.randf_range(0.9, 1.1))
 						if mine and involved > 30:
 							_shake = maxf(_shake, clampf(float(involved) / 120.0, 0.1, 0.6) * 7.0)
+
+
+## A capture's count drained and the planet changed hands: the chime, pitched by planet size,
+## high octave for your captures and low for everyone else. Capped so a big war stays musical.
+func _on_flipped(planet: int, owner: int, owner_before: int) -> void:
+	var audio: Node = main.audio if main else null
+	if audio == null or _chimes >= 3:
+		return
+	_chimes += 1
+	var g: int = session.world.planets[planet].growth
+	if owner == HUMAN:
+		audio.chime(5 - g, -2.0)
+	elif owner_before == HUMAN:
+		audio.chime(5 + (5 - g), -4.0)
+		audio.play("thud", -6.0)
+	else:
+		audio.chime(5 + (5 - g), -14.0)
 
 
 func _update_shake(delta: float) -> void:
@@ -282,7 +296,8 @@ func open_pause() -> void:
 	var o := PauseOverlay.new()
 	o.resume.connect(close_pause)
 	o.restart.connect(func() -> void: main.start_game(config.duplicate()))
-	o.new_map.connect(_new_map)
+	o.in_level = config.has("level")
+	o.new_map.connect(func() -> void: main.goto_training() if config.has("level") else _new_map())
 	o.settings.connect(func() -> void: main.open_settings())
 	o.main_menu.connect(func() -> void: main.goto_menu())
 	_set_overlay(o)
@@ -329,6 +344,18 @@ func _show_result() -> void:
 	o.history = session.history
 	o.seconds = _game_seconds
 	o.opponents = session.world.num_players - 1
+	var level := Levels.index_of(str(config.get("level", "")))
+	if level >= 0:
+		o.level_title = "%d · %s" % [level + 1, Levels.LEVELS[level]["title"]]
+		o.stars_earned = Levels.stars_for(level, won, _game_seconds)
+		var par: Array = Levels.LEVELS[level]["par"]
+		o.par = par
+		if main and main.get("progress") != null:
+			o.new_best = main.progress.record(str(config["level"]), o.stars_earned)
+		if won and level + 1 < Levels.count():
+			o.next_title = Levels.LEVELS[level + 1]["title"]
+			o.next_level.connect(func() -> void: main.start_game(Levels.config(level + 1)))
+		o.training.connect(func() -> void: main.goto_training())
 	o.rematch.connect(func() -> void: main.start_game(config.duplicate()))
 	o.new_map.connect(_new_map)
 	o.main_menu.connect(func() -> void: main.goto_menu())
@@ -503,7 +530,11 @@ func _build_hud() -> void:
 	banner.modulate.a = 0.0
 	top_center.add_child(banner)
 	_hud["banner"] = banner
-	var tip := UiKit.label("you are blue  ·  drag from your planet to another to send ships  ·  take them all to win", "SubtitleLabel")
+	var tip_text := "you are blue  ·  drag from your planet to another to send ships  ·  take them all to win"
+	var level := Levels.index_of(str(config.get("level", "")))
+	if level >= 0:
+		tip_text = "%d · %s\n%s" % [level + 1, Levels.LEVELS[level]["title"], Levels.LEVELS[level]["brief"]]
+	var tip := UiKit.label(tip_text, "SubtitleLabel")
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_color_override("font_color", Palette.ICE)
 	tip.mouse_filter = Control.MOUSE_FILTER_IGNORE

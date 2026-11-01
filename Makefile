@@ -16,6 +16,7 @@ help:
 	@echo "make import      (re)import resources so a fresh clone has a .godot/ cache"
 	@echo "make audio       re-synthesise game/audio/*.wav"
 	@echo "make perf        200-planet frame-time report to docs/perf/ (needs a display)"
+	@echo "make art         fetch NASA/Hubble/Webb images into game/art/ (needs network)"
 	@echo "make capture     UI review captures to docs/ui-reviews/iter-$$(ITER)/ (needs a display)"
 	@echo "make clean       remove generated caches"
 
@@ -43,10 +44,13 @@ clean:
 	rm -rf .godot tools/.venv tools/.pytest_cache
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
 
-.PHONY: audio perf capture
+.PHONY: audio art perf capture
 
 audio:
 	cd tools && $(UV) run --quiet python make_audio.py
+
+art:
+	cd tools && $(UV) run --quiet python fetch_art.py
 
 perf: import
 	$(GODOT) --path . --resolution 1600x900 -- --perf $(CURDIR)/docs/perf/iter-$(ITER).md

@@ -65,18 +65,27 @@ font, ever. Both are variable fonts in `game/fonts/`. Minimum rendered size anyw
 - **Soft rectangles.** Panels: radius 16, Deep at 85 % alpha, 1 px Rim at 60 %, a 24 px blurred shadow
   in Void at 50 %. Think frosted glass over space, not a window.
 - **No hard edges.** No 1 px opaque borders, no square corners, no drop shadows with hard offsets.
-- **Planets.** Filled disc in owner colour with a soft top-left highlight, a rim, and a glow halo.
-  Neutral planets are dark Ash with no halo. Size scales with growth rate: radius
-  `0.42 + 0.13 × growth` map units (40 px per unit at 1× zoom), capped at 0.36 × the distance to the
-  nearest neighbour so planets never touch. Lines never get thinner than 2 px on screen.
-- **Growth ring.** A thin arc (3 px, owner colour) whose *length* shows the growth rate (1/5 to 5/5 of
-  the circle) and which turns slowly, faster for faster growers. Neutral planets show the same rate as
-  1–5 dots on the ring, so you can judge a target before you own it. *(Changed in Iteration 2: one
-  growth interval is a quarter second, so a ring that refilled per interval would flicker.)*
+- **Planets.** *(Changed in Iteration 2, round 2, at the owner's request: "real planets".)* A real
+  surface map (NASA; see `game/art/CREDITS.md`) on a sphere lit from the upper left, turning slowly.
+  Owned worlds take a 30 % wash of the owner colour, a soft atmosphere halo and a limb glow in that
+  colour; neutral worlds are desaturated grey rock with a faint Ash rim and no halo. You are always
+  Earth; enemy homes are other planets; neutral levels 4–5 are planets, 1–3 are moons. Size scales
+  with level: radius `0.42 + 0.13 × growth` map units (40 px per unit at 1× zoom), capped at 0.36 ×
+  the distance to the nearest neighbour so planets never touch. Lines never get thinner than 2 px.
+- **Level dots.** One dot per level (1–5) on a faint orbit just outside the planet, in owner colour
+  (Ash for neutral), orbiting slowly. Replaces the growth arc: a count of dots reads as "level 3"
+  where an arc's length did not.
+- **Ship counts.** Under the planet, below the orbit (and below the selection ring when selected),
+  Ice on owned and #C9D0DE on neutral, with a dark outline. 15 px minimum on screen.
+- **Backdrops.** Hubble/Webb photographs, cover-fitted, at about 20 % brightness, drifting very
+  slowly, under the parallax star layers.
 - **Fleets.** Streams of 2–4 px dots in owner colour behind a soft glowing head, with a faint additive
   trail along a gentle curve; stream length and density grow with √ships. Drawn on the GPU.
 - **Selection.** Ice ring, 2 px, 6 px outside the planet; pulses 1.0→1.06 over 1.2 s while selected.
 - **Hover.** Halo brightens 20 %, ring appears at 50 % alpha in 120 ms.
+- **Captures.** Two beats: the count drains to zero in the defender's colour (0.5 s, smoothstep),
+  then the colour flips with flash, ripple, pop and chime, and the count rises in the attacker's
+  colour (0.4 s, ease-out).
 
 ## 5. Motion
 

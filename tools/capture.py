@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SCREENS = ["main_menu", "setup", "settings", "game_start", "game_midgame", "pause", "victory", "defeat", "game_huge"]
+SCREENS = ["main_menu", "training", "level_1", "setup", "settings", "game_start", "game_midgame", "pause", "victory", "defeat", "game_huge", "training_after_win"]
 RECORD_SECONDS = 60
 FPS = 30
 

@@ -2,6 +2,7 @@
 extends MultiMeshInstance2D
 
 const SHADER := preload("res://game/fx/planet.gdshader")
+const Bodies := preload("res://game/fx/bodies.gd")
 
 var _mat: ShaderMaterial
 
@@ -9,6 +10,8 @@ var _mat: ShaderMaterial
 func _init() -> void:
 	_mat = ShaderMaterial.new()
 	_mat.shader = SHADER
+	_mat.set_shader_parameter("bodies", Bodies.texture())
+	_mat.set_shader_parameter("body_width", float(Bodies.WIDTH))
 	material = _mat
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_2D
@@ -39,8 +42,8 @@ func set_view(screen_scale: float, reduced_motion: bool) -> void:
 	_mat.set_shader_parameter("pulse_amount", 0.0 if reduced_motion else 1.0)
 
 
-## flags: 1 selected, 2 hovered, 4 drag target, 8 neutral.
-func set_planet(i: int, pos: Vector2, radius: float, outer: float, color: Color, growth: int, flags: int, rotation: float) -> void:
+## flags: 1 selected, 2 hovered, 4 drag target, 8 neutral. `body` is a Bodies layer.
+func set_planet(i: int, pos: Vector2, radius: float, outer: float, color: Color, growth: int, flags: int, rotation: float, body: int = 0) -> void:
 	multimesh.set_instance_transform_2d(i, Transform2D(Vector2(outer, 0), Vector2(0, outer), pos))
 	multimesh.set_instance_color(i, color)
-	multimesh.set_instance_custom_data(i, Color(radius, float(growth), float(flags), rotation))
+	multimesh.set_instance_custom_data(i, Color(radius, float(growth), float(flags + 16 * body), rotation))

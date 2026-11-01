@@ -4,6 +4,9 @@ extends "res://game/ui/overlay_base.gd"
 signal resume
 signal restart
 signal new_map
+
+## In a training level "NEW MAP" becomes "TRAINING" (the level map is fixed).
+var in_level := false
 signal settings
 signal main_menu
 
@@ -15,6 +18,8 @@ func _ready() -> void:
 	gap.custom_minimum_size = Vector2(0, 8)
 	column.add_child(gap)
 	var items := [["RESUME", "PrimaryButton", resume], ["RESTART", "", restart], ["NEW MAP", "", new_map], ["SETTINGS", "", settings], ["MAIN MENU", "GhostButton", main_menu]]
+	if in_level:
+		items[2] = ["TRAINING", "", new_map]
 	var buttons: Array = []
 	for it: Array in items:
 		var b := UiKit.button(it[0], it[1], 300.0)

@@ -3,17 +3,23 @@ extends "res://game/ui/overlay_base.gd"
 
 signal closed
 
+const SoundIcon := preload("res://game/ui/sound_icon.gd")
+
 var main: Node
+var _unmuted := {}  # key -> volume before muting from the icon
 
 
 func _ready() -> void:
 	column.add_child(UiKit.label("SETTINGS", "HeadingLabel"))
 	var grid := GridContainer.new()
-	grid.columns = 3
+	grid.columns = 4
 	grid.add_theme_constant_override("h_separation", 18)
 	grid.add_theme_constant_override("v_separation", 18)
 	for row: Array in [["music", "Music"], ["sfx", "Effects"], ["ui", "Interface"]]:
 		var key: String = row[0]
+		var icon := SoundIcon.new()
+		icon.kind = key
+		grid.add_child(icon)
 		var name_label := UiKit.label(row[1])
 		name_label.custom_minimum_size = Vector2(120, 0)
 		grid.add_child(name_label)
@@ -27,13 +33,26 @@ func _ready() -> void:
 		slider.value = float(main.settings[key]) if main else 0.7
 		var value_label := UiKit.label("%d%%" % int(round(slider.value * 100.0)), "CaptionLabel")
 		value_label.custom_minimum_size = Vector2(48, 0)
-		slider.value_changed.connect(func(v: float) -> void: _on_volume(key, v, value_label))
+		icon.level = slider.value
+		slider.value_changed.connect(func(v: float) -> void:
+			icon.level = v
+			_on_volume(key, v, value_label))
+		icon.toggled.connect(func() -> void:
+			if slider.value > 0.001:
+				_unmuted[key] = slider.value
+				slider.value = 0.0
+			else:
+				slider.value = float(_unmuted.get(key, 0.7))
+			_preview(key))
 		slider.drag_ended.connect(func(_changed: bool) -> void: _preview(key))
 		grid.add_child(slider)
 		grid.add_child(value_label)
 	column.add_child(grid)
 	var display_row := HBoxContainer.new()
 	display_row.add_theme_constant_override("separation", 18)
+	var display_gap := Control.new()
+	display_gap.custom_minimum_size = Vector2(34, 0)
+	display_row.add_child(display_gap)
 	var dl := UiKit.label("Display")
 	dl.custom_minimum_size = Vector2(120, 0)
 	display_row.add_child(dl)

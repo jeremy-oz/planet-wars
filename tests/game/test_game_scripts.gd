@@ -58,3 +58,27 @@ func test_screens_build_and_switch() -> void:
 	game.force_end(true)
 	assert_true(game._ended)
 	main.free()
+
+
+func test_training_screen_launches_a_level_and_records_stars() -> void:
+	var tmp := "user://test_progress_screens.cfg"
+	var tree := Engine.get_main_loop() as SceneTree
+	var main: Node = Main.new()
+	main.progress = preload("res://game/training/progress.gd").new(tmp)
+	tree.root.add_child(main)
+	main.goto_training(false)
+	var screen: Node = main.current
+	assert_eq(screen.get_script().resource_path, "res://game/ui/training_screen.gd")
+	assert_eq(screen.selected, 0, "a fresh player starts at the first level")
+	screen._process(0.016)
+	main.start_game(preload("res://game/training/levels.gd").config(screen.selected), false)
+	var game: Node = main.current
+	assert_eq(game.get_script().resource_path, "res://game/play/game_screen.gd")
+	assert_eq(str(game.config["level"]), "moon")
+	assert_true(main.last_config.is_empty() or not main.last_config.has("level"), "levels do not overwrite the skirmish setup")
+	game._game_seconds = 30.0
+	game.force_end(true)
+	assert_eq(main.progress.stars("moon"), 3, "a fast win records 3 stars")
+	assert_true(main.progress.is_unlocked(1), "and opens Mercury")
+	main.free()
+	DirAccess.remove_absolute(tmp)
