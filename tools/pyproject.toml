@@ -1,0 +1,15 @@
+[project]
+name = "planet-wars-tools"
+version = "0.0.1"
+description = "Build, CI and dev tooling for Planet Wars. Python lives here and nowhere else."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

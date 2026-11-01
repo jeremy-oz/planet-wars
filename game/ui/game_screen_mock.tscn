@@ -1,0 +1,156 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/ui/design_backdrop.gd" id="1_backdrop"]
+[ext_resource type="Script" path="res://game/ui/game_screen_mock.gd" id="2_map"]
+
+[node name="GameScreenMock" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Backdrop" type="Node2D" parent="."]
+script = ExtResource("1_backdrop")
+seed = 21
+stars = 360
+
+[node name="Map" type="Node2D" parent="."]
+script = ExtResource("2_map")
+
+[node name="HUD" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="TopLeft" type="PanelContainer" parent="HUD"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_type_variation = &"ChipPanel"
+
+[node name="Players" type="HBoxContainer" parent="HUD/TopLeft"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="P1" type="Label" parent="HUD/TopLeft/Players"]
+layout_mode = 2
+theme_type_variation = &"ShipCountLabel"
+theme_override_colors/font_color = Color(0.337, 0.706, 0.914, 1)
+text = "  ● 281"
+
+[node name="P2" type="Label" parent="HUD/TopLeft/Players"]
+layout_mode = 2
+theme_type_variation = &"ShipCountLabel"
+theme_override_colors/font_color = Color(0.902, 0.624, 0, 1)
+text = "● 267"
+
+[node name="P3" type="Label" parent="HUD/TopLeft/Players"]
+layout_mode = 2
+theme_type_variation = &"ShipCountLabel"
+theme_override_colors/font_color = Color(0.8, 0.475, 0.655, 1)
+text = "● 132"
+
+[node name="P4" type="Label" parent="HUD/TopLeft/Players"]
+layout_mode = 2
+theme_type_variation = &"ShipCountLabel"
+theme_override_colors/font_color = Color(0.122, 0.749, 0.584, 1)
+text = "● 178  "
+
+[node name="TopRight" type="PanelContainer" parent="HUD"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+theme_type_variation = &"ChipPanel"
+
+[node name="Controls" type="HBoxContainer" parent="HUD/TopRight"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Tick" type="Label" parent="HUD/TopRight/Controls"]
+layout_mode = 2
+theme_type_variation = &"CaptionLabel"
+text = "  tick 214   "
+
+[node name="Slower" type="Button" parent="HUD/TopRight/Controls"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "–"
+
+[node name="Speed" type="Label" parent="HUD/TopRight/Controls"]
+layout_mode = 2
+theme_type_variation = &"ShipCountLabel"
+text = "  1×  "
+
+[node name="Faster" type="Button" parent="HUD/TopRight/Controls"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "+"
+
+[node name="Pause" type="Button" parent="HUD/TopRight/Controls"]
+layout_mode = 2
+focus_mode = 0
+text = "PAUSE"
+
+[node name="Menu" type="Button" parent="HUD/TopRight/Controls"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "≡"
+
+[node name="Bottom" type="PanelContainer" parent="HUD"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+theme_type_variation = &"ChipPanel"
+
+[node name="Send" type="HBoxContainer" parent="HUD/Bottom"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="HUD/Bottom/Send"]
+layout_mode = 2
+theme_type_variation = &"CaptionLabel"
+text = "  send  "
+
+[node name="Q25" type="Button" parent="HUD/Bottom/Send"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "25%"
+
+[node name="Q50" type="Button" parent="HUD/Bottom/Send"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"PrimaryButton"
+text = "50%"
+
+[node name="Q75" type="Button" parent="HUD/Bottom/Send"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "75%"
+
+[node name="Q100" type="Button" parent="HUD/Bottom/Send"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"GhostButton"
+text = "100%"
+
+[node name="BottomLeft" type="Label" parent="HUD"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+theme_type_variation = &"HintLabel"
+text = "sending 74 ships  ·  drop on a planet, right-click to cancel"

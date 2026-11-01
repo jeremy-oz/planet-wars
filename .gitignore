@@ -1,0 +1,19 @@
+# Godot
+.godot/
+*.import.tmp
+export_presets.cfg.secret
+build/
+# Python / uv
+__pycache__/
+*.pyc
+.venv/
+tools/.venv/
+# OS / editors
+.DS_Store
+*.swp
+.idea/
+.vscode/
+# capture output (large); findings and curated screenshots are kept
+docs/ui-reviews/*/raw/
+# the owner's original copy of the plan; PLAN.md is the tracked version
+Planet Wars — iterative build plan.md
