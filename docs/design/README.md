@@ -2,8 +2,8 @@
 
 | Screen | Scene | Status |
 |---|---|---|
-| `main_menu.png` | `game/ui/main_menu_static.tscn` | awaiting sign-off |
-| `game_screen.png` | `game/ui/game_screen_mock.tscn` | awaiting sign-off |
+| `main_menu.png` | `game/ui/main_menu_static.tscn` | signed off 2026-11-01 |
+| `game_screen.png` | `game/ui/game_screen_mock.tscn` | signed off 2026-11-01 |
 
 Both are real Godot scenes using `game/theme/planet_wars_theme.tres` and the drawing primitives in
 `game/theme/palette.gd`, captured by `make design` (`tools/snapshot.gd`) at 1600×900.

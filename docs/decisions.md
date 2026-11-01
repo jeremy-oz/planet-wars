@@ -19,3 +19,4 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - Static design screens are real Godot scenes using the theme, screenshotted by `tools/snapshot.gd` — the sign-off is on the thing that ships, not a mockup that drifts from it.
 - Combat ties leave the planet with its current owner and 0 ships (2010 rule) — simplest rule that is already battle-tested by thousands of bots; written down because it is the one everyone gets wrong.
 - `state_hash()` uses FNV-1a over integer fields only — float formatting differs across platforms; integers do not.
+- Static main menu and game screen signed off by the owner on 2026-11-01 — gameplay UI (Iteration 2) may now be built against them and the style guide.
