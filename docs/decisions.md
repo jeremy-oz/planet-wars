@@ -31,3 +31,21 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - A pinned `state_hash()` test guards the rules — any behavioural change to the sim breaks it on purpose, forcing a `SIM_VERSION` bump and a re-pin in the same PR.
 - Bots live in `sim/bots/` under the purity lint — a bot that reads the clock or unseeded RNG would make single-player replays non-deterministic.
 - No UI review loop for Iteration 1 — the plan starts the loop at Iteration 2 and this iteration has no visible UI.
+
+## Iteration 2
+
+- One tick every 0.25 s at 1× (speeds ½×, 1×, 2×, 4×) — fleets cross a medium map in 5–8 s, Galcon-brisk; the calm Auralux pacing pass is Iteration 4.
+- Human sends are queued and applied on the next tick, with the whoosh and squash played on click — keeps the sim's tick-ordered input while the UI answers in the same frame.
+- The send share is taken of what each source holds when the order is applied, not when clicked — a click can never ask for ships that are no longer there.
+- Bots think every 4/2/1 ticks for Relaxed/Normal/Sharp — reaction speed is the most legible difficulty knob and needs no new bot code.
+- Fleets and planets are drawn by MultiMesh + shaders, not `_draw` — the CPU version ran at 12 fps on a 200-planet stress map (≈60 000 draw calls a frame); the GPU version runs at 240 fps with 4 700 fleets in flight.
+- Fleet instances are written once at launch; the shader computes position from a `sim_time` uniform — per-frame cost no longer grows with fleets, which is what Iteration 7's 1000-planet target needs.
+- Bots may decide a tick's orders during the frames before it (`Session.think_ahead`) — the world cannot change between ticks, so results are identical (tested), and the 8 ms of thinking no longer lands in one frame.
+- HUD totals and music tension read a per-tick cache in `Session` — re-summing every fleet each frame cost more than drawing them.
+- All audio is synthesised by `tools/make_audio.py` (numpy) and committed as WAV — no licensing questions, deterministic, and a fresh clone plays without Python.
+- Music is two looping pads (calm, tense) in C major pentatonic, crossfaded by the share of ships in flight — the same adaptive idea Iteration 7 extends, at no extra cost now.
+- Capture chimes pick the note from planet size and the octave from who captured — you can hear your own progress without looking.
+- Screens are built in code with theme type variations rather than hand-written `.tscn` files — the scenes are mostly generated layout, and code keeps the stagger/juice wiring next to the nodes it animates.
+- A demo driver plays the human seat through the real UI path (selection, drag line, send) with a visible cursor — the 60 s review recording shows interaction feedback, not just bots.
+- Tests run on the first frame of the SceneTree, not in `_initialize` — only then is the root in the tree, so screen smoke tests get real `_ready()` calls.
+- Settings are kept in memory only — persisting them is in Iteration 4's scope.

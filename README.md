@@ -3,6 +3,15 @@
 A Galcon / Auralux / Eufloria-style game: planets grow ships, you send fleets, you win the map.
 Built for human players online, self-hosted, no telemetry. See `PLAN.md` for the iteration plan.
 
+## Play
+
+```
+godot --path .          # or open project.godot in the editor and press F5
+```
+
+Drag from your blue planet to another to send ships. Click to select, click a target to send;
+1–4 set how much to send; space pauses; Esc opens the menu.
+
 ## Develop
 
 Requirements: [Godot 4.7.2](https://godotengine.org/download) on your `PATH` as `godot`,
@@ -10,7 +19,8 @@ Requirements: [Godot 4.7.2](https://godotengine.org/download) on your `PATH` as 
 
 ```
 make test      # what CI runs: lint, headless GDScript tests, tooling tests
-make design    # re-render the static design screens into docs/design/
+make perf      # 200-planet frame-time report into docs/perf/ (needs a display)
+make capture   # UI review screenshots + 60 s recording into docs/ui-reviews/ (needs a display, ffmpeg)
 make help      # everything else
 ```
 

@@ -65,10 +65,16 @@ font, ever. Both are variable fonts in `game/fonts/`. Minimum rendered size anyw
 - **Soft rectangles.** Panels: radius 16, Deep at 85 % alpha, 1 px Rim at 60 %, a 24 px blurred shadow
   in Void at 50 %. Think frosted glass over space, not a window.
 - **No hard edges.** No 1 px opaque borders, no square corners, no drop shadows with hard offsets.
-- **Planets.** Filled disc in owner colour, 2 px inner ring at 100 % alpha, glow halo. Neutral planets
-  are Ash with no halo. Size scales with growth rate: radius `18 + 6 × growth` px at 1× zoom.
-- **Growth ring.** A thin arc (3 px, owner colour) that fills over one growth interval and resets.
-- **Fleets.** Streams of 2–3 px dots in owner colour with a short additive trail; density ∝ ships.
+- **Planets.** Filled disc in owner colour with a soft top-left highlight, a rim, and a glow halo.
+  Neutral planets are dark Ash with no halo. Size scales with growth rate: radius
+  `0.42 + 0.13 × growth` map units (40 px per unit at 1× zoom), capped at 0.36 × the distance to the
+  nearest neighbour so planets never touch. Lines never get thinner than 2 px on screen.
+- **Growth ring.** A thin arc (3 px, owner colour) whose *length* shows the growth rate (1/5 to 5/5 of
+  the circle) and which turns slowly, faster for faster growers. Neutral planets show the same rate as
+  1–5 dots on the ring, so you can judge a target before you own it. *(Changed in Iteration 2: one
+  growth interval is a quarter second, so a ring that refilled per interval would flicker.)*
+- **Fleets.** Streams of 2–4 px dots in owner colour behind a soft glowing head, with a faint additive
+  trail along a gentle curve; stream length and density grow with √ships. Drawn on the GPU.
 - **Selection.** Ice ring, 2 px, 6 px outside the planet; pulses 1.0→1.06 over 1.2 s while selected.
 - **Hover.** Halo brightens 20 %, ring appears at 50 % alpha in 120 ms.
 
@@ -113,7 +119,13 @@ references are ours to keep in the repo; they stand in for Auralux / Eufloria sc
 not redistribute. Read them in order: the void → planets in the palette → the growth ring → fleet
 streams → a capture ripple → Eufloria-style softness → a playable background → the glass HUD.
 
-## 9. Static design (Iteration 0 sign-off)
+## 9. HUD (Iteration 2)
+
+Matches the signed-off mock: player totals with a share bar top-left; clock, speed, pause and menu
+top-right; send share (25/50/75/100 %) bottom-centre with a one-line contextual hint above it that
+always says what the next click will do. A first-game tip sits top-centre until the first send.
+
+## 10. Static design (Iteration 0 sign-off)
 
 `docs/design/main_menu.png` and `docs/design/game_screen.png` are rendered from the static scenes
 `game/ui/main_menu_static.tscn` and `game/ui/game_screen_mock.tscn` using the theme. Re-render with

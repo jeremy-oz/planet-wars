@@ -11,13 +11,22 @@ const TEST_ROOT := "res://tests"
 const TestCase := preload("res://tests/case.gd")
 
 
-func _initialize() -> void:
+var _started := false
+
+
+## Tests run on the first frame, not in _initialize: only then is the root in the tree,
+## so scene tests get _ready() calls like they would in the game.
+func _process(_delta: float) -> bool:
+	if _started:
+		return false
+	_started = true
 	# _run() returns null if a script error aborts it; never hang CI on that.
 	var code = _run()
 	if code == null:
 		print("run_tests: runner aborted by a script error (see above)")
 		code = 2
 	quit(code)
+	return false
 
 
 func _run() -> int:
