@@ -20,3 +20,14 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - Combat ties leave the planet with its current owner and 0 ships (2010 rule) — simplest rule that is already battle-tested by thousands of bots; written down because it is the one everyone gets wrong.
 - `state_hash()` uses FNV-1a over integer fields only — float formatting differs across platforms; integers do not.
 - Static main menu and game screen signed off by the owner on 2026-11-01 — gameplay UI (Iteration 2) may now be built against them and the style guide.
+
+## Iteration 1
+
+- Sim entities are inner classes (`World.Planet`, `World.Fleet`, `World.Order`), not Dictionaries — typed member access is several times faster in GDScript and the benchmark runs 1000 games in under 2 s.
+- Orders are a flat Array applied per player in ascending id — matches SPEC §4 step 1 without relying on `sort_custom` stability.
+- Travel times are cached in an n×n matrix built lazily — bots query distances O(P²) per tick; `ceil(sqrt)` once per pair is enough.
+- `MapText.parse` returns null and sets `last_error` instead of `push_error` — the server will relay the message to a client, and CI logs stay free of backtraces for expected failures.
+- Map generator places home planets on a ring around the centre — always succeeds for 1–8 players and is roughly fair; true symmetry waits for Iteration 4.
+- A pinned `state_hash()` test guards the rules — any behavioural change to the sim breaks it on purpose, forcing a `SIM_VERSION` bump and a re-pin in the same PR.
+- Bots live in `sim/bots/` under the purity lint — a bot that reads the clock or unseeded RNG would make single-player replays non-deterministic.
+- No UI review loop for Iteration 1 — the plan starts the loop at Iteration 2 and this iteration has no visible UI.
