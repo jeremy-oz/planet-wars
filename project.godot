@@ -15,7 +15,6 @@ config/description="A Galcon / Auralux-style planet conquest game, built for fri
 config/version="0.0.1"
 run/main_scene="res://game/ui/main_menu_static.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-run/low_processor_mode=false
 config/icon="res://icon.svg"
 
 [display]
@@ -28,8 +27,6 @@ window/stretch/aspect="expand"
 [gui]
 
 theme/custom="res://game/theme/planet_wars_theme.tres"
-theme/default_font_antialiasing=1
-theme/default_font_subpixel_positioning=1
 
 [rendering]
 
