@@ -16,13 +16,14 @@ SIM_DIR = REPO_ROOT / "sim"
 
 # token -> why it is forbidden
 FORBIDDEN: dict[str, str] = {
-    r"\brandf\b": "global RNG is unseeded; use a seeded RandomNumberGenerator owned by the world",
-    r"\brandi\b": "global RNG is unseeded",
-    r"\brandf_range\b": "global RNG is unseeded",
-    r"\brandi_range\b": "global RNG is unseeded",
-    r"\brandomize\b": "seeds from the clock",
-    r"\brand_from_seed\b": "fine in principle, but route it through the world's RNG",
-    r"\bseed\(": "global seed() mutates process-wide state",
+    # `(?<![.\w])` = the bare global function, not a method on a seeded RandomNumberGenerator
+    r"(?<![.\w])randf\b": "global RNG is unseeded; use a seeded RandomNumberGenerator owned by the world",
+    r"(?<![.\w])randi\b": "global RNG is unseeded",
+    r"(?<![.\w])randf_range\b": "global RNG is unseeded",
+    r"(?<![.\w])randi_range\b": "global RNG is unseeded",
+    r"(?<![.\w])randomize\b": "seeds from the clock",
+    r"(?<![.\w])rand_from_seed\b": "fine in principle, but route it through the world's RNG",
+    r"(?<![.\w])seed\(": "global seed() mutates process-wide state",
     r"\bTime\.": "wall clock / ticks make results time-dependent",
     r"\bOS\.": "OS access has no place in the sim",
     r"\bEngine\.": "engine state (fps, frames) must not leak into rules",

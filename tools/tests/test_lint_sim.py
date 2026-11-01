@@ -19,3 +19,9 @@ def test_clean_file_passes(tmp_path):
     f = tmp_path / "world.gd"
     f.write_text("func tick(dt: int) -> void:\n\tpass\n")
     assert lint_sim.lint_file(f) == []
+
+
+def test_seeded_rng_methods_are_allowed(tmp_path):
+    f = tmp_path / "bot.gd"
+    f.write_text("var rng := RandomNumberGenerator.new()\nfunc pick():\n\treturn rng.randi_range(0, 3) + rng.randf()\n")
+    assert lint_sim.lint_file(f) == []
