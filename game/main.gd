@@ -134,6 +134,7 @@ func _capture(dir: String) -> void:
 	goto_menu(false)
 	await _wait(2.4)
 	await _shot(dir, "01_main_menu")
+	last_config = DEMO_CONFIG.duplicate()
 	goto_setup()
 	await _wait(1.2)
 	await _shot(dir, "02_setup")
@@ -153,11 +154,21 @@ func _capture(dir: String) -> void:
 	await _shot(dir, "06_pause")
 	g.close_pause()
 	await _wait(0.3)
-	g.force_end(true)
-	await _wait(1.6)
+	# a real win: the blue seat on autopilot against one Random bot, played out at 4×
+	start_game({"seed": 14, "opponents": 1, "bot": "random", "difficulty": "relaxed", "map": "small", "autopilot": true, "speed_index": 3})
+	var guard := 0
+	while not current._ended and guard < 600:
+		await _wait(0.1)
+		guard += 1
+	await _wait(1.8)
 	await _shot(dir, "07_victory")
-	g.force_end(false)
-	await _wait(1.6)
+	# a real loss: the blue seat idles against two Sharp Greedy bots at 4×
+	start_game({"seed": 15, "opponents": 2, "bot": "greedy", "difficulty": "sharp", "map": "small", "speed_index": 3})
+	guard = 0
+	while not current._ended and guard < 900:
+		await _wait(0.1)
+		guard += 1
+	await _wait(1.8)
 	await _shot(dir, "08_defeat")
 	var huge := {"seed": 9, "opponents": 3, "bot": "greedy", "difficulty": "sharp", "map": "huge", "autopilot": true, "speed_index": 2}
 	start_game(huge)

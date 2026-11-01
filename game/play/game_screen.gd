@@ -70,6 +70,7 @@ func _ready() -> void:
 	map_view.send_requested.connect(_on_send)
 	map_view.denied.connect(_on_denied)
 	map_view.selection_changed.connect(_on_selection_changed)
+	map_view.you_marker = 0.0 if (bool(config.get("autopilot", false))) else 6.0
 	camera = Camera2D.new()
 	add_child(camera)
 	camera.make_current()
@@ -339,6 +340,7 @@ func _on_send(sources: PackedInt32Array, destination: int) -> void:
 		if main and main.audio:
 			var ships := session.estimate(sources, FRACTIONS[fraction_index])
 			main.audio.play("whoosh", -4.0, clampf(1.25 - log(float(maxi(ships, 1))) / 12.0, 0.8, 1.2))
+		map_view.you_marker = minf(map_view.you_marker, 1.0)
 		if not _sent_once:
 			_sent_once = true
 			var tip: Control = _hud["tip"]
@@ -501,7 +503,7 @@ func _build_hud() -> void:
 	banner.modulate.a = 0.0
 	top_center.add_child(banner)
 	_hud["banner"] = banner
-	var tip := UiKit.label("drag from your blue planet to another planet to send ships", "SubtitleLabel")
+	var tip := UiKit.label("you are blue  ·  drag from your planet to another to send ships  ·  take them all to win", "SubtitleLabel")
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_color_override("font_color", Palette.ICE)
 	tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -526,7 +528,7 @@ func _update_hud(delta: float) -> void:
 		_shown_totals[p] = lerpf(_shown_totals[p], float(totals[p]), k)
 		values[p] = _shown_totals[p]
 		var l: Label = labels[p]
-		l.text = "● %d" % int(round(_shown_totals[p]))
+		l.text = ("● you %d" if p == HUMAN else "● %d") % int(round(_shown_totals[p]))
 		l.modulate.a = 1.0 if totals[p] > 0 else 0.3
 	bar.set("values", values)
 	bar.queue_redraw()
@@ -546,7 +548,7 @@ func _hint() -> String:
 		return "release to select every planet of yours inside the box"
 	var n := map_view.selection.size()
 	if n > 0:
-		return "%d selected  ·  click a target to send %d ships (%d%%)  ·  keys 1–4 change the share" % [n, map_view.estimate_ships, pct]
+		return "%d selected  ·  click a target to send %d ships (%d%%)  ·  keys 1–4 change the share  ·  right-click cancels" % [n, map_view.estimate_ships, pct]
 	if not _sent_once:
 		return "click one of your planets, then click a target  ·  or drag between them"
 	return "click or drag from your planets  ·  double-click selects all  ·  space pauses  ·  scroll zooms"

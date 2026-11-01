@@ -15,6 +15,9 @@ const DrawLayer := preload("res://game/fx/draw_layer.gd")
 const FleetRenderer := preload("res://game/fx/fleet_renderer.gd")
 const PlanetRenderer := preload("res://game/fx/planet_renderer.gd")
 const MAX_FX := 160
+const NEUTRAL_TEXT := Color("#C9D0DE")
+const WIN_COLOR := Color("#7FE3B5")
+const LOSE_COLOR := Color("#FF8A7A")
 const World := preload("res://sim/world.gd")
 
 const UNIT := 40.0
@@ -33,6 +36,8 @@ var hover := -1
 var estimate_ships := 0  ## set by the owner; shown next to the cursor while aiming
 var ghost_cursor := Vector2.INF  ## demo driver's fake cursor in world px; INF hides it
 var reduced_motion := false
+## Seconds left to show the "YOU" marker on the human's planets (set by the game at the start).
+var you_marker := 0.0
 
 var _pressing := false
 var _dragging := false
@@ -191,6 +196,7 @@ func drag_target() -> int:
 
 func _process(delta: float) -> void:
 	_time += delta
+	you_marker = maxf(0.0, you_marker - delta)
 	if world == null:
 		return
 	var k_count := 1.0 - exp(-delta / COUNT_TIME)
@@ -526,6 +532,30 @@ func _paint_fx(ci: CanvasItem) -> void:
 					ci.draw_texture_rect(dot, Rect2(p - Vector2(size, size), Vector2(size, size) * 2.0), false, Color(c.lightened(0.3), 1.0 - e))
 
 
+## Attack preview under the target: "37 vs 45 · not enough" in red, "· takes it" in green,
+## "+37 reinforce" for your own planet. Enemy defenders include growth during the trip.
+func _draw_preview(ci: CanvasItem, sources: PackedInt32Array, target: int) -> void:
+	var t := world.planets[target]
+	var text := ""
+	var col := Palette.ICE
+	if t.owner == HUMAN:
+		text = "+%d reinforce" % estimate_ships
+	else:
+		var trip := 1
+		for s in sources:
+			if s != target:
+				trip = maxi(trip, world.travel_time(s, target))
+		var defenders := t.ships + (t.growth * trip if t.owner != 0 else 0)
+		var wins := estimate_ships > defenders
+		text = "%d vs %d  ·  %s" % [estimate_ships, defenders, "takes it" if wins else "not enough"]
+		col = WIN_COLOR if wins else LOSE_COLOR
+	var lfs := int(_px(17.0))
+	var tw := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x
+	var lp := planet_pos(target) + Vector2(-tw * 0.5, planet_radius(target) + _px(40.0))
+	ci.draw_string_outline(_font, lp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, int(_px(5.0)), Color(Palette.VOID, 0.8))
+	ci.draw_string(_font, lp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, col)
+
+
 func _paint_overlay(ci: CanvasItem) -> void:
 	if world == null:
 		return
@@ -541,8 +571,9 @@ func _paint_overlay(ci: CanvasItem) -> void:
 		var base := p.position * UNIT + Vector2(-w * 0.5, fs * 0.36)
 		if _deny[i] < 0.35:
 			base.x += sin(_deny[i] * 60.0) * _px(3.0) * (1.0 - _deny[i] / 0.35)
-		ci.draw_string(_font, base + Vector2(0, _px(1.0, 1.0)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, shadow)
-		ci.draw_string(_font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.ICE if p.owner != 0 else Palette.MIST)
+		var outline := maxi(int(_px(4.0)), 3)
+		ci.draw_string_outline(_font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, outline, Color(Palette.VOID, 0.7))
+		ci.draw_string(_font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.ICE if p.owner != 0 else NEUTRAL_TEXT)
 	if _dragging:
 		var target := drag_target()
 		var step := _px(16.0, 12.0)
@@ -560,14 +591,29 @@ func _paint_overlay(ci: CanvasItem) -> void:
 			while x < to:
 				ci.draw_circle(a + dir * x, _px(2.0, 2.0), Color(Palette.ICE, 0.6), true, -1.0, true)
 				x += step
-		var label := "%d ships" % estimate_ships
-		var lfs := int(_px(17.0))
-		var lp := _cursor + Vector2(_px(18.0), -_px(22.0))
 		if target >= 0:
-			var tw := _font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x
-			lp = planet_pos(target) + Vector2(-tw * 0.5, planet_radius(target) + _px(40.0))
-		ci.draw_string(_font, lp + Vector2(0, _px(1.0)), label, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, shadow)
-		ci.draw_string(_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.ICE)
+			_draw_preview(ci, _drag_sources, target)
+		else:
+			var label := "%d ships" % estimate_ships
+			var lfs := int(_px(17.0))
+			var lp := _cursor + Vector2(_px(18.0), -_px(22.0))
+			ci.draw_string_outline(_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, int(_px(4.0)), Color(Palette.VOID, 0.7))
+			ci.draw_string(_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.ICE)
+	elif interactive and not selection.is_empty() and hover >= 0 and not selection.has(hover):
+		_draw_preview(ci, selection, hover)
+	if you_marker > 0.0:
+		var a := clampf(you_marker / 1.0, 0.0, 1.0)
+		var bob := 0.0 if reduced_motion else sin(_time * 4.0) * _px(4.0)
+		for p in world.planets:
+			if p.owner != HUMAN:
+				continue
+			var top := p.position * UNIT - Vector2(0, planet_radius(p.id) + _px(26.0) + bob)
+			var yfs := int(_px(18.0))
+			var yw := _font.get_string_size("YOU", HORIZONTAL_ALIGNMENT_LEFT, -1, yfs).x
+			ci.draw_string_outline(_font, top - Vector2(yw * 0.5, _px(8.0)), "YOU", HORIZONTAL_ALIGNMENT_LEFT, -1, yfs, int(_px(4.0)), Color(Palette.VOID, 0.7 * a))
+			ci.draw_string(_font, top - Vector2(yw * 0.5, _px(8.0)), "YOU", HORIZONTAL_ALIGNMENT_LEFT, -1, yfs, Color(Palette.ICE, a))
+			var tip := top + Vector2(0, _px(8.0))
+			ci.draw_colored_polygon(PackedVector2Array([tip + Vector2(-_px(7.0), -_px(6.0)), tip + Vector2(_px(7.0), -_px(6.0)), tip + Vector2(0, _px(3.0))]), Color(Palette.ICE, a))
 	if _boxing:
 		var rect := Rect2(_press_pos, Vector2.ZERO).expand(_cursor)
 		ci.draw_rect(rect, Color(Palette.ICE, 0.05))

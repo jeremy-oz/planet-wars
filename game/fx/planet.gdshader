@@ -45,12 +45,15 @@ void fragment() {
 	float ring_w = max(2.2 * px, 3.0);
 	vec4 o = vec4(0.0);
 
-	vec3 body = neutral ? ash.rgb * 0.45 : c * 0.82;
-	float hl = exp(-pow(length(v_local - vec2(-0.26, -0.3) * r) / (0.5 * r), 2.0)) * (neutral ? 0.09 : 0.17);
+	// Neutral planets are hollow (dark core, bright rim) so they never read as a desaturated player
+	// colour under colour-blindness. Owned bodies sit at 62 % so light counts keep their contrast.
+	vec3 body = neutral ? ash.rgb * 0.16 : c * 0.62;
+	float hl = exp(-pow(length(v_local - vec2(-0.26, -0.3) * r) / (0.5 * r), 2.0)) * (neutral ? 0.04 : 0.14);
 	body = body + vec3(hl);
 	o = over(o, body, 1.0 - smoothstep(r - aa, r + aa, d));
-	vec3 rim = mix(c, vec3(1.0), 0.15);
-	o = over(o, rim, band(d, r - line * 0.5, line, aa) * (neutral ? 0.6 : 0.95));
+	vec3 rim = neutral ? ash.rgb : mix(c, vec3(1.0), 0.15);
+	float rim_w = neutral ? line * 1.4 : line;
+	o = over(o, rim, band(d, r - rim_w * 0.5, rim_w, aa) * (neutral ? 0.85 : 0.95));
 
 	float rr = r + max(5.0 * px, 6.0);
 	float ang = atan(v_local.y, v_local.x);
