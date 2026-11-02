@@ -80,7 +80,9 @@ font, ever. Both are variable fonts in `game/fonts/`. Minimum rendered size anyw
 - **Backdrops.** Hubble/Webb photographs, cover-fitted, at about 20 % brightness, drifting very
   slowly, under the parallax star layers.
 - **Fleets.** Streams of 2–4 px dots in owner colour behind a soft glowing head, with a faint additive
-  trail along a gentle curve; stream length and density grow with √ships. Drawn on the GPU.
+  trail along a gentle curve. Size reads as strength: one dot per ship (up to 80), and width, length,
+  dot size and head glow grow with √ships, so 2 ships are a faint wisp and 100 a wide bright swarm.
+  Drawn on the GPU.
 - **Selection.** Ice ring, 2 px, 6 px outside the planet; pulses 1.0→1.06 over 1.2 s while selected.
 - **Hover.** Halo brightens 20 %, ring appears at 50 % alpha in 120 ms.
 - **Captures.** Two beats: the count drains to zero in the defender's colour (0.5 s, smoothstep),

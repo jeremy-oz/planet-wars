@@ -115,3 +115,11 @@ Owner, verbatim: "fix: when paused, the music continues · fix: users are allowe
 3. **Easier retry.** Two losses in a row on a world offer EASIER <WORLD>: the enemy thinks one notch slower and your home fleet is 1.5×. A win is worth 1 star and opens the next world.
 
 Also fixed: pausing fades the music out and holds its place (it comes back on resume, or when you leave a paused game); the in-game menu button reads "≡ MENU".
+
+## Round 4 — owner play-test, 2026-11-03
+
+Owner, verbatim: "1. okay for now. i will keep testing it 2. now i am stuck in Uranus (not necessarily bad as i am not a good gamer) 3. 200% improvement on visual appeal" and "when sending out troops, i think the size of visual is always the same, right? if so, is it easy to create the visual of troops based on the number of ships".
+
+1. **Fleets show their size.** Streams already grew with √ships, but too gently to notice. Now a fleet draws one dot per ship (up to 80), and its width, length, dot size and head glow grow clearly with √ships: 2 ships are a faint wisp, 30 a stream, 120 a wide bright swarm. `--quick-shots` adds `f_fleets` (2 / 8 / 30 / 120 side by side).
+
+Uranus balance unchanged (the owner's call); the easier retry after two losses covers it.

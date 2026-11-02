@@ -210,7 +210,8 @@ func _capture(dir: String) -> void:
 	get_tree().quit()
 
 
-## Dev loop: the menu, the training map, level 1 (its lesson), a busy demo game and a coach hint,
+## Dev loop: the menu, the training map, level 1 (its lesson), a busy demo game, a coach hint and
+## fleets of 2 / 8 / 30 / 120 ships side by side,
 ## for checking art changes without the full capture walk (about 35 s).
 func _quick_shots(dir: String) -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
@@ -232,6 +233,29 @@ func _quick_shots(dir: String) -> void:
 	current.coach.step = current.coach.steps.size()
 	await _wait(8.5)
 	await _shot(dir, "e_coach")
+	# fleet sizes: 2, 8, 30 and 120 ships from home, frozen mid-flight
+	var cfg := {"seed": 3, "opponents": 1, "bot": "random", "difficulty": "easy", "map": "small"}
+	start_game(cfg, false)
+	await _wait(0.6)
+	var g: Node = current
+	g.toggle_pause()
+	var w = g.session.world
+	var home := 0
+	for p in w.planets:
+		if p.owner == 1:
+			home = p.id
+	var targets := []
+	for p in w.planets:
+		if p.id != home:
+			targets.append(p.id)
+	targets.sort_custom(func(a: int, b: int) -> bool: return w.travel_time(home, a) > w.travel_time(home, b))
+	var sizes := [2, 8, 30, 120]
+	for k in range(mini(sizes.size(), targets.size())):
+		var trip: int = w.travel_time(home, targets[k])
+		w.add_fleet(1, sizes[k], home, targets[k], trip, trip / 2)
+	g.map_view._sync_fleets()
+	await _wait(0.8)
+	await _shot(dir, "f_fleets")
 	get_tree().quit()
 
 

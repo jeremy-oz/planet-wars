@@ -73,3 +73,7 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - Pausing fades the music out and holds its place; leaving a paused game restores it — owner report.
 - The pause menu's button reads "≡ MENU" instead of "≡" — the owner did not find RESTART behind the bare icon.
 - Pars: 3★ ≈ 2× the time at one move a second + 15 s; 2★ ≈ 1.5× the slower of the 2 s and 2.5 s runs + 30 s — stars measure play a person can reach.
+
+### Iteration 2, round 4 (owner: Uranus is hard, visuals "200 % better", fleets look the same size)
+- Fleet size follows ship count much more strongly (one dot per ship up to 80; width, length, dot size and glow ∝ √ships) — the old √ships scaling was too gentle to read; √ keeps a 300-ship stream from covering the map.
+- Uranus left as it is — the owner called being stuck "not necessarily bad", and the easier retry after two losses already covers it.

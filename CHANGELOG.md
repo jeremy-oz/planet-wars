@@ -4,6 +4,10 @@ All notable changes to Planet Wars. Format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Changed — Iteration 2, round 4 (owner: fleets all look the same size)
+- Fleets show their strength: one dot per ship up to 80, and a bigger fleet is wider, longer and
+  glows brighter. Two ships are a faint wisp; a hundred are a wide swarm.
+
 ### Added — Iteration 2, round 3 (owner: stuck at Mars)
 - Training coach. Each world opens with a short lesson (one skill: sending, levels, send share,
   box-select, defending, ...) that waits until you do it, with rings and an arrow on the map.
