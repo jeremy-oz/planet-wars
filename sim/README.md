@@ -13,6 +13,6 @@ See `docs/SPEC.md` for the rules. Everything is preloaded by path, nothing uses 
 | `map_generator.gd` | `generate(seed, players, planets, size) -> String` map text; seed fully identifies the map. |
 | `ascii.gd` | `render(world) -> String` for debugging; never prints. |
 | `match_runner.gd` | `play(world, {player: bot}) -> {winner, ticks, hash}`. |
-| `bots/` | `RandomBot`, `NearestBot`, `GreedyBot`; `decide(world, player) -> Array[Order]`. |
+| `bots/` | `RandomBot`, `NearestBot`, `GreedyBot`, `CoachBot` (one move at a time, defence first; feeds the training coach); `decide(world, player) -> Array[Order]`. |
 
 `SIM_VERSION` in `world.gd` must bump whenever a rule or the hash changes (the pinned-hash test enforces it).

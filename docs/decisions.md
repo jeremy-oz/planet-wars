@@ -60,5 +60,16 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - Captures animate in two beats (drain in the defender's colour, then flip and count up) — owner Q4. Visual only; the sim still resolves arrivals in one tick.
 - Training (nine solar-system levels) is pulled forward from Iteration 5's campaign — the owner would not play a sixth game without a reason to; the plan's done-when needs that. Constellations and skills stay in Iteration 5.
 - Training progress is saved to `user://progress.cfg` now, ahead of Iteration 4's settings persistence — unlocks are meaningless if they reset every launch.
-- Star pars are multiples of a Greedy bot's time in your seat (3★ ≈ 3.5×+10 s, 2★ ≈ 6×+20 s) — a bot reacts every tick, so its time is a floor; a test keeps every level winnable by it inside the 3-star par.
+- Star pars are multiples of a Greedy bot's time in your seat (3★ ≈ 3.5×+10 s, 2★ ≈ 6×+20 s) — a bot reacts every tick, so its time is a floor; a test keeps every level winnable by it inside the 3-star par. *(Replaced in round 3: pars now come from human-paced play.)*
 - A level's enemy is keyed by seat, not planet id — hand-made maps list the enemy home last.
+
+### Iteration 2, round 3 (owner: "stuck at Mars")
+
+- Training is tuned against a person, not a bot: a test follows the coach's advice with one move every 2 s and must win every world (normal and easier retry) — a pace check showed that play lost every world from Venus on; the old fairness test used a bot reacting every tick.
+- Training commanders make one move per decision (`bot_moves: 1`) and think every 2 s on most worlds (new "gentle" pace) — the gap was moves per second, not strategy: a bot sent from every planet at once while a person drags one at a time.
+- The coach's advice comes from a new sim bot (`sim/bots/coach_bot.gd`, defence first, keeps a reserve near the enemy) — one source of truth for the hints, the arrow and the fairness test, so "follow the arrow" provably wins.
+- Lessons hold the match until you do the thing (one skill per world) and live hints only appear when you are idle 6 s or a planet is about to fall — teaching without nagging; the last world keeps only danger warnings.
+- After two losses in a row the defeat screen offers an easier retry (enemy one notch slower, your home fleet ×1.5) worth 1 star — owner's choice; it still opens the next world so nobody is stuck again.
+- Pausing fades the music out and holds its place; leaving a paused game restores it — owner report.
+- The pause menu's button reads "≡ MENU" instead of "≡" — the owner did not find RESTART behind the bare icon.
+- Pars: 3★ ≈ 2× the time at one move a second + 15 s; 2★ ≈ 1.5× the slower of the 2 s and 2.5 s runs + 30 s — stars measure play a person can reach.

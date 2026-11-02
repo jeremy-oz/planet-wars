@@ -16,6 +16,7 @@ var _tense: AudioStreamPlayer
 var _tension := 0.0
 var _tension_target := 0.0
 var _music_gain := 0.0
+var _paused := false  # the game is paused: the music fades out and holds its place
 var _played_this_frame: Dictionary = {}
 
 
@@ -47,9 +48,31 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_played_this_frame.clear()
 	_tension = move_toward(_tension, _tension_target, delta * 0.12)
-	_music_gain = move_toward(_music_gain, 1.0, delta * 0.35)  # music fades in, never starts abruptly
+	if _paused:
+		_music_gain = move_toward(_music_gain, 0.0, delta * 4.0)  # out in a quarter second
+		if _music_gain <= 0.0 and not _calm.stream_paused:
+			_calm.stream_paused = true
+			_tense.stream_paused = true
+	else:
+		if _calm.stream_paused:
+			_calm.stream_paused = false
+			_tense.stream_paused = false
+		_music_gain = move_toward(_music_gain, 1.0, delta * 0.8)  # music fades in, never starts abruptly
 	_calm.volume_db = linear_to_db(maxf(0.0001, _music_gain * (1.0 - 0.5 * _tension)))
 	_tense.volume_db = linear_to_db(maxf(0.0001, _music_gain * _tension * 0.9))
+
+
+## Pausing the game pauses the music (fade out, hold the position); resuming fades it back in.
+func set_paused(p: bool) -> void:
+	_paused = p
+
+
+func is_music_paused() -> bool:
+	return _paused and _calm.stream_paused
+
+
+func music_gain() -> float:
+	return _music_gain
 
 
 ## 0 = calm, 1 = everything is in flight. Moves slowly so the music never lurches.

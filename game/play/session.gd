@@ -14,7 +14,7 @@ const GreedyBot := preload("res://sim/bots/greedy_bot.gd")
 const HUMAN := 1
 const BOT_KINDS := ["random", "nearest", "greedy"]
 ## Ticks between bot decisions, by difficulty (1 tick = 0.25 s at 1× speed).
-const THINK_EVERY := {"relaxed": 4, "normal": 2, "sharp": 1}
+const THINK_EVERY := {"easy": 12, "gentle": 8, "relaxed": 4, "normal": 2, "sharp": 1}
 const MAP_SIZES := {"small": 12, "medium": 24, "large": 48, "huge": 200}
 
 enum Outcome { PLAYING, WON, LOST }
@@ -65,6 +65,12 @@ func _init(p_config: Dictionary = {}) -> void:
 		var size_scale := sqrt(maxf(1.0, planet_count / 16.0))
 		world = MapText.parse(MapGenerator.generate(map_seed, players, planet_count, Vector2(30.0, 20.0) * size_scale), map_seed)
 	world.max_ticks = int(config.get("max_ticks", 1 << 30))
+	# the easier training retry: your starting planets hold more ships
+	var head_start: float = float(config.get("head_start", 1.0))
+	if head_start != 1.0:
+		for pl in world.planets:
+			if pl.owner == HUMAN:
+				pl.ships = int(round(pl.ships * head_start))
 	# `bots` (one kind per opponent seat) overrides the single `bot` kind.
 	var kinds: Array = config.get("bots", [])
 	for p in range(2, players + 1):
@@ -212,7 +218,15 @@ func _thinkers() -> PackedInt32Array:
 
 
 func _decide(p: int) -> Array:
-	return (autopilot if p == HUMAN else bots[p]).decide(world, p)
+	if p == HUMAN:
+		return autopilot.decide(world, p)
+	var orders: Array = bots[p].decide(world, p)
+	# Training commanders move like a person: a few fleets per decision, the biggest first.
+	var limit: int = int(config.get("bot_moves", 0))
+	if limit > 0 and orders.size() > limit:
+		orders.sort_custom(func(a: World.Order, b: World.Order) -> bool: return a.ships > b.ships)
+		orders.resize(limit)
+	return orders
 
 
 func is_spectating() -> bool:

@@ -2,60 +2,103 @@
 ## Earth; each starts small and calm and adds one idea. You always launch from Earth; the enemy
 ## holds the world the level is named after. The full constellation campaign is Iteration 5.
 ##
-## A level is a Session config plus presentation. Stars: 1 for a win, 2 within `par[0]` seconds of
-## game time, 3 within `par[1]`. Pars are set from a Greedy bot playing your seat (it reacts every
-## tick, so it is far faster than a person): 3 stars ≈ 3.5× its time + 10 s, 2 stars ≈ 6× + 20 s.
-## tests/game/test_training.gd checks that bot still wins every level, inside the 3-star par.
+## A level is a Session config plus presentation and a short lesson (game/training/coach.gd).
+## Stars: 1 for a win, 2 within `par[0]` seconds of game time, 3 within `par[1]`.
+##
+## Tuned for a person, not a bot. tests/game/test_training.gd plays every world by following the
+## coach's advice with one move every two seconds (a relaxed human pace) and must win. Pars come
+## from those runs: 3 stars ≈ 2× the time at one move a second + 15 s (never under a fast bot's time);
+## 2 stars ≈ 1.5× the slower of the two- and two-and-a-half-second runs + 30 s.
 extends RefCounted
+
+## Training commanders move like a person: one fleet per decision (see Session "bot_moves").
+const BOT_MOVES := 1
+## The easier retry: one notch slower thinking and a bigger home fleet.
+const EASIER := {"sharp": "normal", "normal": "relaxed", "relaxed": "gentle", "gentle": "easy", "easy": "easy"}
+const ASSIST_HEAD_START := 1.5
+const ASSIST_LOSSES := 2  ## losses in a row on a world before the easier retry is offered
 
 const LEVELS: Array[Dictionary] = [
 	{
 		"id": "moon", "body": "moon", "title": "The Moon",
-		"brief": "Drag from Earth to a grey moon to send ships. Take every planet to win.",
-		"bots": ["random"], "difficulty": "relaxed", "seed": 1, "par": [90, 50],
+		"lesson": [
+			{"text": "This is {home}, your home. The number under a planet is its ships. Yours grow every second.", "wait": "ok", "focus": ["home"]},
+			{"text": "Drag from {home} to {near} to send half your ships. Grey planets are neutral: they don't fight back.", "wait": "send", "arrow": ["home", "near"]},
+			{"text": "The orange planet is the enemy. Take every planet to win. Stuck? Press H or HINT and the coach shows a good move.", "wait": "ok", "focus": ["enemy"]},
+		],
+		"brief": "Send ships, take planets. Take them all to win.",
+		"bots": ["random"], "difficulty": "relaxed", "seed": 1, "par": [50, 40],
 		"map_text": "# players: 2\nP 5 10 1 30 3\nP 10 6 0 6 1\nP 10 14 0 6 1\nP 15 10 0 12 2\nP 22 10 2 10 1\n",
 	},
 	{
 		"id": "mercury", "body": "mercury", "title": "Mercury",
+		"lesson": [
+			{"text": "The dots around {big} show its level. Five dots grow five times faster than one, but it costs more to take.", "wait": "ok", "focus": ["big"]},
+			{"text": "Start cheap: take {cheap} first, then save up for the big one.", "wait": "send", "arrow": ["home", "cheap"]},
+		],
 		"brief": "More dots around a planet = higher level = more ships grown. Big ones cost more to take.",
-		"bots": ["random"], "difficulty": "relaxed", "seed": 2, "par": [130, 75],
+		"bots": ["random"], "difficulty": "relaxed", "seed": 2, "par": [65, 55],
 		"map_text": "# players: 2\nP 5 10 1 30 3\nP 9 5 0 5 1\nP 9 15 0 5 1\nP 14 10 0 30 5\nP 19 5 0 10 2\nP 19 15 0 10 2\nP 25 10 2 20 2\n",
 	},
 	{
 		"id": "venus", "body": "venus", "title": "Venus",
+		"lesson": [
+			{"text": "Venus attacks planets you leave empty. Keys 1–4 (or the buttons at the bottom) choose how much to send: a quarter, half, three quarters or all.", "wait": "ok", "focus": ["enemy"]},
+			{"text": "Press 1 to send just a quarter, and keep the rest home.", "wait": "fraction"},
+		],
 		"brief": "Venus fights back. Keys 1–4 send a quarter, half, three quarters or all — keep some home.",
-		"bots": ["nearest"], "difficulty": "relaxed", "seed": 3, "par": [140, 80],
+		"bots": ["nearest"], "difficulty": "gentle", "seed": 3, "par": [80, 60],
 		"map_text": "# players: 2\nP 4 10 1 40 3\nP 26 10 2 40 3\nP 9 5 0 8 2\nP 9 15 0 8 2\nP 21 5 0 8 2\nP 21 15 0 8 2\nP 15 7 0 25 4\nP 15 13 0 25 4\n",
 	},
 	{
 		"id": "mars", "body": "mars", "title": "Mars",
+		"lesson": [
+			{"text": "Mars is quick. Take two planets near {home} first.", "wait": "send", "arrow": ["home", "near"]},
+			{"text": "You have two planets now. Drag a box around both (or shift-click each), then click a target: they launch together.", "wait": "select_many", "after": "own:2"},
+		],
 		"brief": "Drag a box or shift-click to send from several planets at once.",
-		"bots": ["nearest"], "difficulty": "normal", "seed": 404, "planets": 10, "par": [110, 65],
+		"bots": ["nearest"], "difficulty": "gentle", "seed": 404, "planets": 10, "par": [110, 65],
 	},
 	{
 		"id": "jupiter", "body": "jupiter", "title": "Jupiter",
+		"lesson": [
+			{"text": "Jupiter's commander hunts the cheapest planet in reach. When the coach warns you, reinforce the planet under attack.", "wait": "ok", "focus": ["enemy"]},
+		],
 		"brief": "Jupiter's commander hunts the cheapest planet in reach. Don't leave one empty.",
-		"bots": ["greedy"], "difficulty": "relaxed", "seed": 505, "planets": 12, "par": [210, 120],
+		"bots": ["greedy"], "difficulty": "gentle", "seed": 4507, "planets": 12, "par": [195, 75],
 	},
 	{
 		"id": "saturn", "body": "saturn", "title": "Saturn",
+		"lesson": [
+			{"text": "Two opponents, and they fight each other too. Grow quietly, let them trade ships, then take what's left.", "wait": "ok"},
+		],
 		"brief": "Two opponents. Let them fight each other, then take what's left.",
-		"bots": ["nearest", "random"], "difficulty": "normal", "seed": 606, "planets": 14, "par": [225, 130],
+		"bots": ["nearest", "random"], "difficulty": "relaxed", "seed": 5137, "planets": 14, "par": [95, 65],
 	},
 	{
 		"id": "uranus", "body": "uranus", "title": "Uranus",
+		"lesson": [
+			{"text": "Hold your front line: planets close to the enemy keep their ships. Planets behind them send theirs forward.", "wait": "ok", "focus": ["enemy"]},
+		],
 		"brief": "A sharper commander. Hold your front line and grow behind it.",
-		"bots": ["greedy"], "difficulty": "normal", "seed": 712, "planets": 16, "par": [250, 145],
+		"bots": ["greedy"], "difficulty": "relaxed", "seed": 6100, "planets": 16, "par": [335, 120],
 	},
 	{
 		"id": "neptune", "body": "neptune", "title": "Neptune",
+		"lesson": [
+			{"text": "A wide map and two commanders. When you're ahead, press + to speed the game up.", "wait": "speed"},
+		],
 		"brief": "Two greedy commanders on a wide map. Speed up with + when you're winning.",
-		"bots": ["greedy", "greedy"], "difficulty": "normal", "seed": 808, "planets": 20, "par": [375, 215],
+		"bots": ["greedy", "greedy"], "difficulty": "gentle", "seed": 7137, "planets": 20, "par": [790, 300],
 	},
 	{
 		"id": "pluto", "body": "pluto", "title": "Pluto",
+		"quiet_coach": true,
+		"lesson": [
+			{"text": "The edge of the solar system. From here the coach only speaks up when a planet is in danger. H still asks for a hint.", "wait": "ok"},
+		],
 		"brief": "The edge of the solar system: two sharp commanders. Everything you've learned.",
-		"bots": ["greedy", "greedy"], "difficulty": "sharp", "seed": 707, "planets": 24, "par": [640, 370],
+		"bots": ["greedy", "greedy"], "difficulty": "gentle", "seed": 8433, "planets": 24, "par": [880, 195],
 	},
 ]
 
@@ -72,7 +115,9 @@ static func index_of(id: String) -> int:
 
 
 ## The Session/GameScreen config for level `i`.
-static func config(i: int) -> Dictionary:
+## `assist` is the easier retry offered after two losses: the enemy thinks half as often and you
+## start with half as many ships again. A win still opens the next world but earns one star.
+static func config(i: int, assist: bool = false) -> Dictionary:
 	var lv: Dictionary = LEVELS[i]
 	var c := {
 		"level": lv["id"],
@@ -80,10 +125,14 @@ static func config(i: int) -> Dictionary:
 		"bot": lv["bots"][0],
 		"bots": lv["bots"],
 		"opponents": lv["bots"].size(),
-		"difficulty": lv["difficulty"],
+		"difficulty": EASIER.get(lv["difficulty"], lv["difficulty"]) if assist else lv["difficulty"],
+		"bot_moves": BOT_MOVES,
 		"backdrop": ["pillars-webb", "carina", "cosmic-cliffs", "pillars-hubble", "whirlpool"][i % 5],
 		"homes": {2: lv["body"]},
 	}
+	if assist:
+		c["assist"] = true
+		c["head_start"] = ASSIST_HEAD_START
 	if lv.has("map_text"):
 		c["map_text"] = lv["map_text"]
 	else:
@@ -92,10 +141,12 @@ static func config(i: int) -> Dictionary:
 	return c
 
 
-## 0 for a loss; 1 for a win; 2 within par[0] seconds; 3 within par[1].
-static func stars_for(i: int, won: bool, seconds: float) -> int:
+## 0 for a loss; 1 for a win (always 1 with the easier retry); 2 within par[0] seconds; 3 within par[1].
+static func stars_for(i: int, won: bool, seconds: float, assist: bool = false) -> int:
 	if not won:
 		return 0
+	if assist:
+		return 1
 	var par: Array = LEVELS[i]["par"]
 	if seconds <= float(par[1]):
 		return 3

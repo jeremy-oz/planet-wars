@@ -9,6 +9,7 @@ signal new_map
 signal main_menu
 signal next_level
 signal training
+signal easier
 
 var won := false
 var stats: Dictionary = {}  # the human's stats from Session
@@ -21,6 +22,9 @@ var stars_earned := 0
 var par: Array = []
 var new_best := false
 var next_title := ""
+var assist := false  ## this was the easier retry (one star at most)
+var easier_title := ""  ## set after repeated losses: offers "EASIER <WORLD>"
+var tip := ""  ## what to try next time, from the coach
 
 
 func _ready() -> void:
@@ -46,11 +50,17 @@ func _ready() -> void:
 		elif won and stars_earned == 3:
 			note = "a perfect run"
 		elif not won:
-			note = "every planet you take grows more ships — expand early, then strike"
+			note = tip if tip != "" else "every planet you take grows more ships — expand early, then strike"
+		if won and assist:
+			note = "won on the easier retry: 1 star  ·  beat the normal one for more"
 		if new_best and won:
 			note = "new best  ·  " + note
 		if note != "":
 			column.add_child(UiKit.label(note, "CaptionLabel"))
+		if easier_title != "":
+			var offer := UiKit.label("Lost a few times? The easier retry gives you a bigger fleet and a slower enemy. A win opens the next world (1 star).", "CaptionLabel")
+			offer.add_theme_color_override("font_color", Color("#FFD27A"))
+			column.add_child(offer)
 	var grid := GridContainer.new()
 	grid.columns = 5
 	grid.add_theme_constant_override("h_separation", 34)
@@ -86,6 +96,9 @@ func _ready() -> void:
 		items = [["TRAINING", "GhostButton", training], ["RETRY", "" if next_title != "" else "PrimaryButton", rematch]]
 		if next_title != "":
 			items.append(["NEXT: " + next_title.to_upper(), "PrimaryButton", next_level])
+		elif easier_title != "":
+			items[1] = ["RETRY", "", rematch]
+			items.append([easier_title.to_upper(), "PrimaryButton", easier])
 	var buttons: Array = []
 	for it: Array in items:
 		var b := UiKit.button(it[0], it[1], 190.0)

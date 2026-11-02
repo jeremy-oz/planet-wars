@@ -45,6 +45,10 @@ var ghost_cursor := Vector2.INF  ## demo driver's fake cursor in world px; INF h
 var reduced_motion := false
 ## Seconds left to show the "YOU" marker on the human's planets (set by the game at the start).
 var you_marker := 0.0
+## Training coach marks: {"focus": planet ids to ring, "sources" + "destination" for a suggested
+## move arrow, "kind": "defend" draws it in warning red}. Empty draws nothing.
+var guide: Dictionary = {}
+const GUIDE_COLOR := Color("#FFD27A")
 
 var _pressing := false
 var _dragging := false
@@ -658,6 +662,8 @@ func _paint_overlay(ci: CanvasItem) -> void:
 			ci.draw_string(_font, top - Vector2(yw * 0.5, _px(8.0)), "YOU", HORIZONTAL_ALIGNMENT_LEFT, -1, yfs, Color(Palette.ICE, a))
 			var tip := top + Vector2(0, _px(8.0))
 			ci.draw_colored_polygon(PackedVector2Array([tip + Vector2(-_px(7.0), -_px(6.0)), tip + Vector2(_px(7.0), -_px(6.0)), tip + Vector2(0, _px(3.0))]), Color(Palette.ICE, a))
+	if not guide.is_empty():
+		_draw_guide(ci)
 	if _boxing:
 		var rect := Rect2(_press_pos, Vector2.ZERO).expand(_cursor)
 		ci.draw_rect(rect, Color(Palette.ICE, 0.05))
@@ -665,3 +671,46 @@ func _paint_overlay(ci: CanvasItem) -> void:
 	if ghost_cursor != Vector2.INF:
 		ci.draw_circle(ghost_cursor, _px(5.0), Color(Palette.ICE, 0.95), true, -1.0, true)
 		ci.draw_arc(ghost_cursor, _px(13.0), 0.0, TAU, 32, Color(Palette.ICE, 0.5), _px(1.5), true)
+
+
+## The coach's marks: a breathing ring around each planet it talks about, and a moving chevron
+## path from the suggested sources to the target (gold for a move, red for a defence).
+func _draw_guide(ci: CanvasItem) -> void:
+	var col := Palette.EMBER if str(guide.get("kind", "")) == "defend" else GUIDE_COLOR
+	var breathe := 0.5 + 0.5 * sin(_time * 4.0)
+	var rings := PackedInt32Array(guide.get("focus", PackedInt32Array()))
+	var dst: int = int(guide.get("destination", -1))
+	var sources: PackedInt32Array = guide.get("sources", PackedInt32Array())
+	if dst >= 0:
+		rings.append(dst)
+	for id in rings:
+		if id < 0 or id >= world.planets.size():
+			continue
+		var r := planet_radius(id) + _px(14.0) + breathe * _px(5.0)
+		var segs := 24
+		for k in range(segs):
+			if k % 2 == 1:
+				continue
+			var a0 := TAU * k / segs + _time * 0.6
+			ci.draw_arc(planet_pos(id), r, a0, a0 + TAU / segs, 6, Color(col, 0.55 + 0.4 * breathe), _px(2.5, 2.0), true)
+	if dst < 0 or dst >= world.planets.size():
+		return
+	var step := _px(22.0, 16.0)
+	var offset := fmod(_time * 70.0 / screen_scale, step)
+	for s in sources:
+		if s < 0 or s >= world.planets.size() or s == dst:
+			continue
+		var a := planet_pos(s)
+		var b := planet_pos(dst)
+		var d := a.distance_to(b)
+		var dir := (b - a) / d
+		var side := Vector2(-dir.y, dir.x)
+		var from := planet_radius(s) + _px(12.0)
+		var to := d - planet_radius(dst) - _px(22.0)
+		var x := from + offset
+		var size := _px(7.0, 5.0)
+		while x < to:
+			var c := a + dir * x
+			var fade := clampf(minf(x - from, to - x) / _px(30.0), 0.0, 1.0)
+			ci.draw_polyline(PackedVector2Array([c - dir * size + side * size, c, c - dir * size - side * size]), Color(col, 0.9 * fade), _px(2.5, 2.0), true)
+			x += step

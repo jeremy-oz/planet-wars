@@ -13,6 +13,8 @@ const ShareBar := preload("res://game/ui/share_bar.gd")
 const PauseOverlay := preload("res://game/ui/pause_overlay.gd")
 const ResultOverlay := preload("res://game/ui/result_overlay.gd")
 const GreedyBot := preload("res://sim/bots/greedy_bot.gd")
+const Coach := preload("res://game/training/coach.gd")
+const Bodies := preload("res://game/fx/bodies.gd")
 
 const HUMAN := 1
 const TICK_SECONDS := 0.25
@@ -51,6 +53,8 @@ var _fraction_buttons: Array = []
 var _demo_bot: RefCounted = null
 var _demo: Dictionary = {}
 var _demo_wait := 1.0
+var coach: Coach = null  ## training levels only (not on autopilot)
+var _coach_shown := ""  # text on the coach card, to animate changes
 
 
 func _ready() -> void:
@@ -81,6 +85,13 @@ func _ready() -> void:
 	_shown_totals.resize(session.world.num_players + 1)
 	for p in range(1, session.world.num_players + 1):
 		_shown_totals[p] = session.world.total_ships(p)
+	var level := Levels.index_of(str(config.get("level", "")))
+	if level >= 0 and session.autopilot == null and _demo_bot == null:
+		var names := PackedStringArray()
+		for layer in Bodies.assign(session.world, config.get("homes", {})):
+			var title: String = Bodies.TITLES[Bodies.NAMES[layer]]
+			names.append(title.capitalize() if title.begins_with("the ") else title)
+		coach = Coach.new(session.world, level, names)
 	_build_hud()
 	_fit_camera()
 	get_viewport().size_changed.connect(_fit_camera)
@@ -88,12 +99,18 @@ func _ready() -> void:
 		main.audio.set_tension(0.0)
 
 
+func _exit_tree() -> void:
+	# leaving from the pause menu (restart, training, main menu) must bring the music back
+	if main and main.audio:
+		main.audio.set_paused(false)
+
+
 # --- loop ---------------------------------------------------------------------------------
 
 func _process(delta: float) -> void:
 	if session == null:
 		return
-	if not paused and not _ended:
+	if not paused and not _ended and not (coach != null and coach.holding()):
 		session.think_ahead(1)
 		_acc += delta * SPEEDS[speed_index] / TICK_SECONDS
 		var steps := 0
@@ -111,6 +128,7 @@ func _process(delta: float) -> void:
 	_update_shake(delta)
 	_starfield.scroll(camera.position * camera.zoom.x)
 	_update_hud(delta)
+	_update_coach()
 	if _demo_bot != null:
 		_demo_process(delta)
 	if main and main.audio:
@@ -130,6 +148,8 @@ func _step() -> void:
 	_game_seconds += TICK_SECONDS
 	map_view.on_events(events)
 	_react(events)
+	if coach != null:
+		coach.update(_game_seconds)
 	if session.outcome != Session.Outcome.PLAYING:
 		_ended = true
 		get_tree().create_timer(0.9).timeout.connect(_show_result)
@@ -217,6 +237,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_A:
 				if k.ctrl_pressed or k.meta_pressed:
 					map_view.select_all()
+			KEY_H:
+				ask_hint()
+			KEY_ENTER, KEY_KP_ENTER:
+				if coach == null or coach.lesson().is_empty():
+					return
+				coach.on_action("ok")
 			_:
 				return
 		get_viewport().set_input_as_handled()
@@ -257,15 +283,19 @@ func _fit_camera() -> void:
 	var view := get_viewport_rect().size
 	var r := map_view.map_rect()
 	var usable := view - Vector2(64.0, 250.0)  # top HUD ~80 px, bottom hint + send bar ~150 px
+	if coach != null:
+		usable.y -= 110.0  # room for the level title and the coach's card
 	_fit_zoom = minf(usable.x / r.size.x, usable.y / r.size.y)
 	camera.zoom = Vector2(_fit_zoom, _fit_zoom)
-	camera.position = r.get_center() + Vector2(0, 32.0) / _fit_zoom
+	camera.position = r.get_center() + Vector2(0, 32.0 - (55.0 if coach != null else 0.0)) / _fit_zoom
 
 
 # --- actions ------------------------------------------------------------------------------
 
-func set_fraction(i: int) -> void:
+func set_fraction(i: int, by_player: bool = true) -> void:
 	fraction_index = clampi(i, 0, FRACTIONS.size() - 1)
+	if coach != null and by_player:
+		coach.on_action("fraction")
 	for k in range(_fraction_buttons.size()):
 		(_fraction_buttons[k] as Button).set_pressed_no_signal(k == fraction_index)
 
@@ -273,6 +303,8 @@ func set_fraction(i: int) -> void:
 func set_speed(i: int) -> void:
 	var before := speed_index
 	speed_index = clampi(i, 0, SPEEDS.size() - 1)
+	if coach != null:
+		coach.on_action("speed")
 	if before != speed_index:
 		UiKit.sound("ui_click")
 		_pulse(_hud["speed"])
@@ -285,6 +317,8 @@ func toggle_pause() -> void:
 	var banner: Control = _hud["banner"]
 	banner.visible = true
 	create_tween().tween_property(banner, "modulate:a", 1.0 if paused else 0.0, 0.2)
+	if main and main.audio:
+		main.audio.set_paused(paused)
 
 
 func open_pause() -> void:
@@ -346,12 +380,18 @@ func _show_result() -> void:
 	o.opponents = session.world.num_players - 1
 	var level := Levels.index_of(str(config.get("level", "")))
 	if level >= 0:
-		o.level_title = "%d · %s" % [level + 1, Levels.LEVELS[level]["title"]]
-		o.stars_earned = Levels.stars_for(level, won, _game_seconds)
+		var assist := bool(config.get("assist", false))
+		o.assist = assist
+		o.level_title = "%d · %s%s" % [level + 1, Levels.LEVELS[level]["title"], " (easier)" if assist else ""]
+		o.stars_earned = Levels.stars_for(level, won, _game_seconds, assist)
 		var par: Array = Levels.LEVELS[level]["par"]
 		o.par = par
+		o.tip = _defeat_tip()
 		if main and main.get("progress") != null:
 			o.new_best = main.progress.record(str(config["level"]), o.stars_earned)
+			if not won and not assist and main.progress.losses(str(config["level"])) >= Levels.ASSIST_LOSSES:
+				o.easier_title = "EASIER " + str(Levels.LEVELS[level]["title"]).replace("The ", "").to_upper()
+				o.easier.connect(func() -> void: main.start_game(Levels.config(level, true)))
 		if won and level + 1 < Levels.count():
 			o.next_title = Levels.LEVELS[level + 1]["title"]
 			o.next_level.connect(func() -> void: main.start_game(Levels.config(level + 1)))
@@ -362,8 +402,21 @@ func _show_result() -> void:
 	_set_overlay(o)
 
 
+## One line on what to try next time, from how the lost match went.
+func _defeat_tip() -> String:
+	var st: Dictionary = session.stats[HUMAN]
+	var minutes := maxf(_game_seconds / 60.0, 0.25)
+	if float(st["fleets"]) / minutes < 6.0:
+		return "you sent only %d fleets: keep your ships moving, an idle planet is wasted. Press H for the coach's move" % int(st["fleets"])
+	if int(st["lost"]) > int(st["captured"]) / 2:
+		return "you lost %d planets: keep ships on planets near the enemy and reinforce when the coach warns you" % int(st["lost"])
+	return "grab the cheap neutrals first, then strike when an enemy planet is low. Press H for the coach's move"
+
+
 func _on_send(sources: PackedInt32Array, destination: int) -> void:
 	if session.queue_send(sources, destination, FRACTIONS[fraction_index]):
+		if coach != null:
+			coach.on_action("send", {"sources": sources, "destination": destination})
 		if main and main.audio:
 			var ships := session.estimate(sources, FRACTIONS[fraction_index])
 			main.audio.play("whoosh", -4.0, clampf(1.25 - log(float(maxi(ships, 1))) / 12.0, 0.8, 1.2))
@@ -382,6 +435,8 @@ func _on_denied(_planet: int) -> void:
 
 
 func _on_selection_changed() -> void:
+	if coach != null:
+		coach.on_action("select", {"count": map_view.selection.size()})
 	if not map_view.selection.is_empty() and main and main.audio:
 		main.audio.play("select", -10.0, 1.0, "UI")
 
@@ -458,14 +513,20 @@ func _build_hud() -> void:
 	faster.tooltip_text = "faster  ( + )"
 	faster.pressed.connect(func() -> void: set_speed(speed_index + 1))
 	tr_row.add_child(faster)
+	if coach != null:
+		var hint_button := UiKit.button("HINT", "GhostButton")
+		hint_button.custom_minimum_size = Vector2(92, 48)
+		hint_button.tooltip_text = "the coach shows a good move  ( h )"
+		hint_button.pressed.connect(ask_hint)
+		tr_row.add_child(hint_button)
 	var pause_button := UiKit.button("PAUSE")
 	pause_button.custom_minimum_size = Vector2(124, 48)
 	pause_button.tooltip_text = "pause  ( space )"
 	pause_button.pressed.connect(toggle_pause)
 	tr_row.add_child(pause_button)
 	_hud["pause_button"] = pause_button
-	var menu := UiKit.button("≡", "GhostButton")
-	menu.custom_minimum_size = Vector2(52, 48)
+	var menu := UiKit.button("≡ MENU", "GhostButton")
+	menu.custom_minimum_size = Vector2(108, 48)
 	menu.tooltip_text = "menu  ( esc )"
 	menu.pressed.connect(open_pause)
 	tr_row.add_child(menu)
@@ -513,7 +574,7 @@ func _build_hud() -> void:
 		UiKit.juice(b)
 		b_row.add_child(b)
 		_fraction_buttons.append(b)
-	set_fraction(fraction_index)
+	set_fraction(fraction_index, false)
 
 	# top-centre: paused banner and first-game tip
 	var top_center := VBoxContainer.new()
@@ -540,12 +601,102 @@ func _build_hud() -> void:
 	tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top_center.add_child(tip)
 	_hud["tip"] = tip
+	if coach != null:
+		_build_coach_card(top_center)
 	if _demo_bot != null or session.autopilot != null:
 		tip.modulate.a = 0.0
 		_sent_once = true
 	else:
 		UiKit.stagger_in([tip], 0.6, 0.0, 0.6)
 	UiKit.stagger_in([tl, tr, bottom_col], 0.1, 0.06)
+
+
+## The coach's card: "LESSON 1/3" with a GOT IT button while a lesson step holds the match, or
+## "COACH" / "DANGER" for a live hint. The map shows the matching rings and arrow.
+func _build_coach_card(parent: Control) -> void:
+	var card := PanelContainer.new()
+	card.theme_type_variation = "ChipPanel"
+	card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.modulate.a = 0.0
+	card.visible = false
+	parent.add_child(card)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 18)
+	card.add_child(row)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	row.add_child(col)
+	var caption := UiKit.label("", "CaptionLabel")
+	caption.add_theme_color_override("font_color", MapView.GUIDE_COLOR)
+	col.add_child(caption)
+	var text := UiKit.label("", "SubtitleLabel")
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.custom_minimum_size = Vector2(560, 0)
+	text.add_theme_color_override("font_color", Palette.ICE)
+	text.add_theme_font_size_override("font_size", 19)
+	col.add_child(text)
+	var ok := UiKit.button("GOT IT", "PrimaryButton", 130.0)
+	ok.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ok.tooltip_text = "enter"
+	ok.pressed.connect(func() -> void:
+		if coach != null:
+			coach.on_action("ok"))
+	row.add_child(ok)
+	_hud["coach_card"] = card
+	_hud["coach_caption"] = caption
+	_hud["coach_text"] = text
+	_hud["coach_ok"] = ok
+
+
+## The best move right now, on request (H or the HINT button).
+func ask_hint() -> void:
+	if coach == null or _ended or not coach.lesson().is_empty():
+		return
+	UiKit.sound("ui_click")
+	coach.request(_game_seconds)
+
+
+func _update_coach() -> void:
+	if coach == null:
+		return
+	var card: Control = _hud["coach_card"]
+	var s := coach.lesson()
+	var text := ""
+	var caption := ""
+	var wait := ""
+	if not s.is_empty():
+		var p := coach.lesson_progress()
+		caption = "LESSON %d / %d  ·  the match waits for you" % [p.x, p.y]
+		text = str(s["text"])
+		wait = str(s.get("wait", "ok"))
+		map_view.guide = {"focus": s["focus"], "sources": s.get("sources", PackedInt32Array()), "destination": int(s.get("destination", -1)), "kind": "lesson"}
+	elif not coach.hint.is_empty() and not _ended:
+		var h := coach.hint
+		caption = "DANGER" if h["kind"] == "defend" else "COACH  ·  H for a hint any time"
+		text = str(h["text"])
+		map_view.guide = {"focus": PackedInt32Array(), "sources": h["sources"], "destination": int(h["destination"]), "kind": h["kind"]}
+	else:
+		map_view.guide = {}
+	(_hud["coach_ok"] as Button).visible = wait in ["ok", "speed"]
+	(_hud["coach_caption"] as Label).add_theme_color_override("font_color", Palette.EMBER if caption == "DANGER" else MapView.GUIDE_COLOR)
+	if text != _coach_shown:
+		_coach_shown = text
+		if text != "":
+			(_hud["coach_text"] as Label).text = text
+			(_hud["coach_caption"] as Label).text = caption
+			card.modulate.a = 0.0
+			create_tween().tween_property(card, "modulate:a", 1.0, 0.25)
+			if caption == "DANGER" and main and main.audio:
+				main.audio.play("deny", -8.0, 0.8, "UI")
+		else:
+			var out := create_tween()
+			out.tween_property(card, "modulate:a", 0.0, 0.3)
+			out.tween_callback(func() -> void: card.visible = _coach_shown != "")
+		if text != "":
+			card.visible = true
+	elif text != "":
+		(_hud["coach_caption"] as Label).text = caption
 
 
 func _update_hud(delta: float) -> void:

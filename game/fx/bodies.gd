@@ -18,7 +18,8 @@ const TITLES := {
 const HOMES: PackedStringArray = ["earth", "mars", "jupiter", "neptune", "venus", "saturn", "uranus", "mercury"]
 ## Neutral worlds by level: big levels are planets, small ones are moons.
 const BIG: PackedStringArray = ["venus", "mercury", "uranus", "neptune", "mars", "io", "ganymede", "saturn"]
-const SMALL: PackedStringArray = ["moon", "phobos", "callisto", "europa", "iapetus", "rhea", "charon", "pluto"]
+## (Iapetus stays in the texture array but not in the pool: its real dark half reads as a hole.)
+const SMALL: PackedStringArray = ["moon", "phobos", "callisto", "europa", "rhea", "charon", "pluto"]
 const WIDTH := 1024
 
 static var _array: Texture2DArray
@@ -30,8 +31,13 @@ static func layer(body_name: String) -> int:
 
 ## Body layer for every planet of `world`. `homes` maps seat -> body name for that seat's
 ## starting planet (training levels put the enemy on the world the level is named after).
+## A world that is someone's home never also appears as a neutral ("take Mars" must mean one planet).
 static func assign(world: RefCounted, homes: Dictionary = {}) -> PackedInt32Array:
 	var out := PackedInt32Array()
+	var taken := {}
+	for p in world.planets:
+		if p.owner > 0:
+			taken[str(homes.get(p.owner, HOMES[(p.owner - 1) % HOMES.size()]))] = true
 	for p in world.planets:
 		var body_name: String
 		if p.owner > 0 and homes.has(p.owner):
@@ -39,7 +45,10 @@ static func assign(world: RefCounted, homes: Dictionary = {}) -> PackedInt32Arra
 		elif p.owner > 0:
 			body_name = HOMES[(p.owner - 1) % HOMES.size()]
 		else:
-			var pool := BIG if p.growth >= 4 else SMALL
+			var pool := PackedStringArray()
+			for n in (BIG if p.growth >= 4 else SMALL):
+				if not taken.has(n):
+					pool.append(n)
 			body_name = pool[(p.id * 7 + p.growth * 3) % pool.size()]
 		out.append(layer(body_name))
 	return out

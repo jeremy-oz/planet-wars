@@ -9,6 +9,7 @@ const MatchRunner := preload("res://sim/match_runner.gd")
 const GreedyBot := preload("res://sim/bots/greedy_bot.gd")
 const RandomBot := preload("res://sim/bots/random_bot.gd")
 const NearestBot := preload("res://sim/bots/nearest_bot.gd")
+const CoachBot := preload("res://sim/bots/coach_bot.gd")
 
 const BENCH_GAMES := 1000
 const BENCH_BUDGET_S := 10.0
@@ -64,3 +65,21 @@ func test_greedy_beats_random_1000_games_under_10s() -> void:
 	print("  bench: %d games in %.2fs (%.1f ms/game, avg %d ticks), Greedy won %.1f%%" % [BENCH_GAMES, elapsed, elapsed * 1000.0 / BENCH_GAMES, ticks_total / BENCH_GAMES, rate * 100.0])
 	assert_true(elapsed < BENCH_BUDGET_S, "benchmark took %.2fs, budget %.0fs" % [elapsed, BENCH_BUDGET_S])
 	assert_true(rate > BENCH_MIN_WIN_RATE, "Greedy win rate %.3f below %.2f" % [rate, BENCH_MIN_WIN_RATE])
+
+
+func test_coach_bot_issues_valid_orders_and_beats_random() -> void:
+	var world := MapText.parse(MapGenerator.generate(5, 3, 12), 5)
+	var bots := {1: CoachBot.new(1), 2: RandomBot.new(2), 3: NearestBot.new(3)}
+	for i in range(60):
+		var orders: Array = []
+		for player in bots:
+			for o in bots[player].decide(world, player):
+				assert_true(world.is_valid_order(o), "%s issued an invalid order at tick %d" % [bots[player].bot_name(), i])
+				orders.append(o)
+		world.tick(orders)
+	var wins := 0
+	for seed in range(1, 21):
+		var w := MapText.parse(MapGenerator.generate(seed, 2, 12), seed)
+		if MatchRunner.play(w, {1: CoachBot.new(seed), 2: RandomBot.new(seed)})["winner"] == 1:
+			wins += 1
+	assert_true(wins >= 18, "CoachBot won %d of 20 against Random" % wins)

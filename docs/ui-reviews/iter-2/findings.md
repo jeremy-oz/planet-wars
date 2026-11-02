@@ -103,3 +103,15 @@ Also fixed:
 | Constellation campaign, skills that grow, harder stars | Iteration 5 | The plan's campaign (20 maps, bot ladder) and player powers are Iteration 5. Training is the first chapter of that campaign. |
 | More audio, themes (Q3, "ok for now") | Iteration 7 | The original soundtrack with adaptive layers is Iteration 7. A photo theme per chapter can come with the constellations. |
 | Themes built from related photos (Q6) | Iteration 5 | Each constellation chapter gets its own backdrop set. `fetch_art.py` already takes any NASA, ESA/Webb or ESA/Hubble image. |
+
+## Round 3 — owner play-test, 2026-11-02
+
+Owner, verbatim: "fix: when paused, the music continues · fix: users are allowed to pause, but not to reset (give up) · I am stuck at Mars (training). during the training stage, there should be a clear guide to "train" users to pass the planet/star". Follow-ups: RESTART in the pause menu is enough (it was hidden behind "≡"); guide style **lesson + live coach**; after repeated losses **offer an easier retry**; the player is **teens / adults, casual**.
+
+**Why Mars was a wall.** A pace check played every world by following good advice at one move every 1–3 s. From Venus on, every world was lost: bots sent from all their planets every 0.5–1 s, while a person drags one fleet at a time. The old fairness test used a bot that reacted every tick, so it could not see this.
+
+1. **Training coach.** Each world opens with a short lesson for one skill, and the match waits until you do it: send (Moon), levels (Mercury), send share (Venus), box-select once you own two planets (Mars), defend (Jupiter), and so on. Rings and a gold arrow on the map show where. During play the coach warns in red when a planet will fall ("Io is under attack: 30 ships incoming. Send 12 from Earth to hold it") and, after 6 s idle, points at a good move. HINT / H asks any time. Defeat screens say what to try next.
+2. **Rebalanced for people.** Training commanders make one move per decision and think every 1–2 s. A new test follows the coach at one move every 2 s and must win all nine worlds with 2 stars in reach. Star times were re-set from those runs.
+3. **Easier retry.** Two losses in a row on a world offer EASIER <WORLD>: the enemy thinks one notch slower and your home fleet is 1.5×. A win is worth 1 star and opens the next world.
+
+Also fixed: pausing fades the music out and holds its place (it comes back on resume, or when you leave a paused game); the in-game menu button reads "≡ MENU".

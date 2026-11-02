@@ -7,6 +7,7 @@ const DEFAULT_PATH := "user://progress.cfg"
 
 var path := DEFAULT_PATH
 var _stars: Dictionary = {}  # level id -> best stars (1..3)
+var _losses: Dictionary = {}  # level id -> losses in a row (reset by a win)
 
 
 func _init(p_path: String = DEFAULT_PATH) -> void:
@@ -15,6 +16,8 @@ func _init(p_path: String = DEFAULT_PATH) -> void:
 	if cfg.load(path) == OK:
 		for id in cfg.get_section_keys("stars") if cfg.has_section("stars") else PackedStringArray():
 			_stars[id] = clampi(int(cfg.get_value("stars", id, 0)), 0, 3)
+		for id in cfg.get_section_keys("losses") if cfg.has_section("losses") else PackedStringArray():
+			_losses[id] = maxi(int(cfg.get_value("losses", id, 0)), 0)
 
 
 func stars(id: String) -> int:
@@ -40,13 +43,25 @@ func next_level() -> int:
 	return Levels.count() - 1
 
 
-## Keep the best result. Returns true if it improved.
+## Losses in a row on this level (the easier retry appears at Levels.ASSIST_LOSSES).
+func losses(id: String) -> int:
+	return int(_losses.get(id, 0))
+
+
+## Record a finished match (`earned` 0 = a loss). Keeps the best stars; a loss adds to the losing
+## streak and a win clears it. Returns true if the best improved.
 func record(id: String, earned: int) -> bool:
-	if earned <= stars(id):
-		return false
-	_stars[id] = earned
+	if earned <= 0:
+		_losses[id] = losses(id) + 1
+	else:
+		_losses.erase(id)
+	var improved := earned > stars(id)
+	if improved:
+		_stars[id] = earned
 	var cfg := ConfigFile.new()
 	for k in _stars:
 		cfg.set_value("stars", k, _stars[k])
+	for k in _losses:
+		cfg.set_value("losses", k, _losses[k])
 	cfg.save(path)
-	return true
+	return improved

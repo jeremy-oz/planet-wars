@@ -10,8 +10,9 @@ godot --path .          # or open project.godot in the editor and press F5
 ```
 
 Start with **Training**: nine short levels across our solar system, from the Moon to Pluto. You
-launch from Earth; take every planet to win, faster for more stars. **Skirmish** sets up your own
-map, bots and difficulty.
+launch from Earth; take every planet to win, faster for more stars. Each world opens with a short
+lesson, and a coach points at a good move when you're stuck (press **H** for a hint any time).
+Lost twice? Try the easier retry. **Skirmish** sets up your own map, bots and difficulty.
 
 Drag from your blue planet to another to send ships. Click to select, click a target to send;
 1–4 set how much to send; space pauses; Esc opens the menu. The dots around a planet are its

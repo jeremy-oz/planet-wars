@@ -4,6 +4,19 @@ All notable changes to Planet Wars. Format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Added — Iteration 2, round 3 (owner: stuck at Mars)
+- Training coach. Each world opens with a short lesson (one skill: sending, levels, send share,
+  box-select, defending, ...) that waits until you do it, with rings and an arrow on the map.
+  During play the coach warns when a planet is about to fall and, if you sit idle, points at a
+  good move. HINT (or H) asks for one any time. Defeat screens say what to try next.
+- Easier retry: after two losses in a row on a world, EASIER <WORLD> gives you a bigger fleet and
+  a slower enemy; a win is worth one star and opens the next world.
+
+### Changed
+- Training rebalanced for people: commanders make one move per decision and think more slowly;
+  every world is tested winnable at one move every two seconds. Star times re-set to match.
+- Pausing pauses the music. The in-game menu button is labelled MENU.
+
 ### Added — Iteration 2, round 2 (owner survey)
 - Training: our solar system. Nine levels from the Moon to Pluto, each with a one-line brief,
   1–3 stars by time, unlocks in order, progress kept on this computer. TRAINING leads the menu;

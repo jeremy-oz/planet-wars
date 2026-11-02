@@ -119,6 +119,8 @@ func _show(screen: Node, animated: bool) -> void:
 		await out.finished
 	if current != null:
 		current.queue_free()
+	if audio:
+		audio.set_paused(false)  # a game left from its pause menu must not take the music with it
 	current = screen
 	add_child(screen)
 	move_child(screen, 0)
@@ -208,8 +210,8 @@ func _capture(dir: String) -> void:
 	get_tree().quit()
 
 
-## Dev loop: the menu, the training map, level 1 and a busy demo game, for checking art changes
-## without the full capture walk (about 25 s).
+## Dev loop: the menu, the training map, level 1 (its lesson), a busy demo game and a coach hint,
+## for checking art changes without the full capture walk (about 35 s).
 func _quick_shots(dir: String) -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 	goto_menu(false)
@@ -224,6 +226,12 @@ func _quick_shots(dir: String) -> void:
 	start_game(DEMO_CONFIG.duplicate(), false)
 	await _wait(12.0)
 	await _shot(dir, "d_game")
+	# the coach: Mars with the lesson skipped, idle until it points at a move
+	start_game(preload("res://game/training/levels.gd").config(3), false)
+	await _wait(0.5)
+	current.coach.step = current.coach.steps.size()
+	await _wait(8.5)
+	await _shot(dir, "e_coach")
 	get_tree().quit()
 
 
