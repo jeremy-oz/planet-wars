@@ -14,6 +14,7 @@ const RESERVE_PER_GROWTH := 2
 const RESERVE_BASE := 3
 var near_ticks := 12  ## an enemy planet this close (3 s at 1×) threatens a source
 var exposure := 0.5  ## ...and the source keeps this share of that enemy's ships at home
+var strike_bonus := 2.0  ## an enemy planet is worth this many neutrals of the same size (it stops their growth)
 
 
 func bot_name() -> String:
@@ -62,7 +63,7 @@ func advise(world: World, player: int) -> Dictionary:
 		if not threat.has(m.id):
 			continue
 		var eta: int = first_eta[m.id]
-		var short: int = int(threat[m.id]) - world.garrison_strength(player, m.ships + m.growth * world.growth_ticks(eta)) - int(incoming.get(m.id, 0)) + 1
+		var short: int = int(threat[m.id]) - (m.ships + m.growth * world.growth_ticks(eta) + world.shield_of(m)) - int(incoming.get(m.id, 0)) + 1
 		if short < 1:
 			continue
 		for h in mine:
@@ -92,11 +93,13 @@ func advise(world: World, player: int) -> Dictionary:
 			pooled += int(spare[src.id])
 			var tt := world.travel_time(src.id, t.id)  # the slowest of the group so far
 			var needed: int = world.ships_to_take(t.id, tt) - int(incoming.get(t.id, 0))
+			if int(incoming.get(t.id, 0)) > 0:
+				needed += world.shield_of(t)  # a separate arrival meets the shield again
 			if needed < 1 or needed > pooled:
 				continue
 			# a strike also removes the enemy's growth: worth twice a neutral of the same size;
 			# every extra planet in a group is another click, so groups pay a small toll
-			var gain := float(t.growth + 1) * (2.0 if t.owner != 0 else 1.0)
+			var gain := float(t.growth + 1) * (strike_bonus if t.owner != 0 else 1.0)
 			var score := gain / (float(needed) * float(tt)) / (1.0 + 0.25 * (group.size() - 1))
 			if score > best_score:
 				best_score = score

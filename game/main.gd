@@ -2,6 +2,7 @@
 ## tooling modes used by tools/capture.py and `make perf`:
 ##   -- --capture-screens <dir>   walk every screen and save PNGs
 ##   -- --quick-shots <dir>       three frames of the demo game (art iteration)
+##   -- --level-shots <dir>       the opening of every training map, lesson skipped (map design)
 ##   -- --demo                    endless match with a fake cursor (for the 60 s recording)
 ##   -- --perf [<report path>]    200-planet stress test, vsync off, frame-time report
 extends Node
@@ -54,6 +55,9 @@ func _ready() -> void:
 	elif args.has("--quick-shots"):
 		var k := args.find("--quick-shots")
 		_quick_shots(args[k + 1] if k + 1 < args.size() else "user://quick")
+	elif args.has("--level-shots"):
+		var m := args.find("--level-shots")
+		_level_shots(args[m + 1] if m + 1 < args.size() else "user://levels")
 	elif args.has("--demo"):
 		start_game(DEMO_CONFIG.duplicate(), false)
 	elif args.has("--perf"):
@@ -256,6 +260,18 @@ func _quick_shots(dir: String) -> void:
 	g.map_view._sync_fleets()
 	await _wait(0.8)
 	await _shot(dir, "f_fleets")
+	get_tree().quit()
+
+
+func _level_shots(dir: String) -> void:
+	DirAccess.make_dir_recursive_absolute(dir)
+	var Levels := preload("res://game/training/levels.gd")
+	for i in range(Levels.count()):
+		start_game(Levels.config(i), false)
+		await _wait(0.4)
+		current.coach.step = current.coach.steps.size()
+		await _wait(1.2)
+		await _shot(dir, "%d_%s" % [i + 1, Levels.LEVELS[i]["id"]])
 	get_tree().quit()
 
 

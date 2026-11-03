@@ -96,15 +96,14 @@ Per planet, per tick, after all fleets that arrive this tick are known:
 4. A three-way (or more) arrival uses the same rule: only the two largest forces matter; everyone else
    is annihilated.
 
-**Garrison edge (`defense`, a match setting, default 0).** In step 1 the current owner's own ships
-enter the table as `ships * (100 + defense) / 100` (integer division) when the owner is a player;
-neutral planets and arriving fleets get no edge. If the owner holds the planet, arriving friendly
-fleets absorb the damage first, and what is left of the garrison's effective strength converts back
-as `ceil(kept * 100 / (100 + defense))` real ships. Reinforcement with no enemy present is a plain
-merge. `ships_to_take(planet, ticks)` gives what an attacker needs: the garrison after growth, with
-its edge, plus one. With `defense = 0` this is the 2010 rule set exactly.
+**Planet shield (`shield`, a match setting, default 0).** In step 1 the current owner's entry starts
+at `ships + shield * growth` when the owner is a player; neutral planets have no shield. If the owner
+holds, the shield took the first hits: the planet keeps `min(ships + friendly arrivals, top - second)`.
+The shield is not state; it is whole again next tick, so separate arrivals each meet it.
+Reinforcement with no enemy present is a plain merge. `ships_to_take(planet, ticks)` gives what one
+attacking fleet needs: the garrison after growth, plus the shield, plus one.
 
-This is the 2010 rule set exactly (with `defense = 0`). The tie rule is the one most often got wrong; the test suite covers it.
+This is the 2010 rule set exactly (with `shield = 0`). The tie rule is the one most often got wrong; the test suite covers it.
 
 ## 6. Game end
 

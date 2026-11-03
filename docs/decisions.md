@@ -88,3 +88,12 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - The 3-star test follows the coach at one move a second instead of the Greedy autopilot — under the edge the coach plays better than Greedy (Greedy now loses Pluto), and stars should measure play a person can reach.
 - Two-step captures, combat in space, a "send all" shortcut and difficulty from maps go to Iteration 4 — each is a bigger rules or UI change, and the calm pace already fixed the measured problem.
 
+### Iteration 2, round 6 (owner: "too many planets too quickly. Check Auralux for the formations")
+- Training maps are hand-designed symmetric formations built by `game/training/formations.gd` (draw one side; it mirrors or rotates for the other seats) — Auralux's maps are hand-placed and symmetric with a starter cluster per home and a contested centre; random scatters had none of that.
+- Planet counts 5, 6, 7, 8, 9, 10, 10, 13, 13 (was 5 … 24), at most +3 a step and capped at 13 — the owner found the ramp too steep, and research put Auralux's late maps around 12–20 suns.
+- The round-5 garrison edge (2× strength) became a flat shield of 5 ships per growth level — a multiplier also doubled a planet's growth, so a big untouched planet out-grew any attacker and symmetric maps stalemated (Uranus timed out every run). A flat shield protects thin planets, which is where the churn was, without making stockpiles invulnerable; it is Auralux's fixed planet health in our terms.
+- Bots and the coach pay the shield again for each separate arrival — they used to count fleets already flying as part of the next attack and trickled ships into a fresh shield; the shield now rewards one concentrated attack.
+- Shield 5, not 3 or 8 — 3 let Venus, Jupiter and Pluto churn and lose; 8 dragged Uranus past 15 minutes.
+- Harder worlds give you a head start (Jupiter 1.3×, Uranus 1.2×, Neptune 1.45×, Pluto 1.15×) instead of lopsided maps — a symmetric map against an equal bot is a coin flip, and Auralux's early levels lean the player's way; the maps stay fair to read.
+- The 3-star test takes the coach's best of one move every 1, 1.5 and 2 s — three-player worlds swing with how the two bots fight each other, so a single pace is a noisy measure of what a quick player can reach.
+

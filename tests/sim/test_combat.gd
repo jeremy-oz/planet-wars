@@ -109,48 +109,57 @@ func test_arrivals_at_different_planets_are_independent() -> void:
 	assert_eq(w.planets[1].ships, 4)
 
 
-## SPEC §5 defence: an owned planet's garrison fights as ships * (100 + defense) / 100.
-func test_garrison_edge_holds_against_an_equal_fleet() -> void:
-	var w := _battlefield(1, 20)
-	w.defense = 50
-	w.add_fleet(2, 25, 0, 1, 1, 1)
+## SPEC §5 shield: an owned planet adds `shield` ships per growth level to its side of a fight.
+func _shielded(ships: int, growth: int) -> World:
+	var w := _battlefield(1, ships)
+	w.planets[1].growth = growth
+	w.shield = 5
+	return w
+
+
+func test_shield_holds_a_thin_planet() -> void:
+	var w := _shielded(4, 3)  # 4 ships + 15 shield
+	w.add_fleet(2, 18, 0, 1, 1, 1)
 	w.tick()
-	assert_eq(w.planets[1].owner, 1, "20 defend as 30, beat 25")
-	assert_eq(w.planets[1].ships, 4, "5 effective left = ceil(5 / 1.5) real ships")
+	assert_eq(w.planets[1].owner, 1, "18 attackers break on 4 + 15")
+	assert_eq(w.planets[1].ships, 4, "4 + 3 growth = 7 ships; 18 hits: 15 on the shield, 3 on the ships")
 
 
-func test_garrison_edge_capture_keeps_the_difference_over_the_effective_garrison() -> void:
-	var w := _battlefield(1, 20)
-	w.defense = 50
+func test_shield_takes_the_first_hits() -> void:
+	var w := _shielded(20, 2)  # shield 10, growth 2 lands first: 22 ships
+	w.add_fleet(2, 15, 0, 1, 1, 1)
+	w.tick()
+	assert_eq(w.planets[1].owner, 1)
+	assert_eq(w.planets[1].ships, 17, "15 hits: 10 on the shield, 5 on the 22 ships")
+
+
+func test_capture_through_the_shield_keeps_the_difference() -> void:
+	var w := _shielded(20, 2)
 	w.add_fleet(2, 40, 0, 1, 1, 1)
 	w.tick()
 	assert_eq(w.planets[1].owner, 2)
-	assert_eq(w.planets[1].ships, 10, "40 - 30")
+	assert_eq(w.planets[1].ships, 40 - 22 - 10)
 
 
-func test_neutral_planets_get_no_edge() -> void:
+func test_neutral_planets_have_no_shield() -> void:
 	var w := _battlefield(0, 20)
-	w.defense = 50
+	w.planets[1].growth = 3
+	w.shield = 5
 	w.add_fleet(2, 25, 0, 1, 1, 1)
 	w.tick()
 	assert_eq(w.planets[1].owner, 2)
 	assert_eq(w.planets[1].ships, 5)
 
 
-func test_arriving_reinforcements_absorb_damage_before_the_garrison() -> void:
-	var w := _battlefield(1, 20)
-	w.defense = 50
+func test_reinforcing_a_shielded_planet_is_a_plain_merge() -> void:
+	var w := _shielded(20, 2)
 	w.add_fleet(1, 10, 0, 1, 1, 1)
-	w.add_fleet(2, 25, 0, 1, 1, 1)
 	w.tick()
-	assert_eq(w.planets[1].owner, 1, "10 + 30 effective beat 25")
-	assert_eq(w.planets[1].ships, 10, "reinforcements take 10, garrison 15 effective = 10 real")
+	assert_eq(w.planets[1].ships, 32)
 
 
-func test_ships_to_take_prices_the_edge_and_growth() -> void:
-	var w := _battlefield(1, 20)
-	w.defense = 50
-	w.planets[1].growth = 2
-	assert_eq(w.ships_to_take(1, 5), 46, "(20 + 2*5) * 1.5 + 1")
+func test_ships_to_take_prices_the_shield_and_growth() -> void:
+	var w := _shielded(20, 2)
+	assert_eq(w.ships_to_take(1, 5), 20 + 2 * 5 + 10 + 1)
 	w.planets[1].owner = 0
-	assert_eq(w.ships_to_take(1, 5), 21, "neutrals neither grow nor get the edge")
+	assert_eq(w.ships_to_take(1, 5), 21, "neutrals neither grow nor shield")

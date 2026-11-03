@@ -16,14 +16,14 @@ const BOT_KINDS := ["random", "nearest", "greedy"]
 ## Ticks between bot decisions, by difficulty (a tick is `tick_seconds`: 0.5 s calm, 0.25 s fast).
 const THINK_EVERY := {"easy": 12, "gentle": 8, "relaxed": 4, "normal": 2, "sharp": 1}
 const MAP_SIZES := {"small": 12, "medium": 24, "large": 48, "huge": 200}
-## Match pace: seconds per tick at 1× (fleets fly 1 unit per tick), ticks per growth step, and the
-## garrison edge in percent (sim/world.gd `defense`). "fast" is the original arcade pace: a top
-## planet makes 20 ships/s and planets flip in seconds. "calm" is the default (owner play-test,
-## round 5): about 4 ships/s, fleets at 2.5 units/s, and garrisons fight at 2x, so a planet you
-## hold is worth defending and the game rewards plans over fast clicks.
+## Match pace: seconds per tick at 1× (fleets fly 1 unit per tick), ticks per growth step, and
+## the planet shield in ships per growth level (sim/world.gd `shield`). "fast" is the original
+## arcade pace: a top planet makes 20 ships/s and planets flip in seconds. "calm" is the default
+## (owner play-test, round 5): about 4 ships/s, fleets at 2.5 units/s, and every planet you own is
+## shielded, so a thinly held planet is not a free snack and plans beat fast clicks.
 const PACES := {
-	"calm": {"tick_seconds": 0.4, "growth_every": 3, "defense": 100},
-	"fast": {"tick_seconds": 0.25, "growth_every": 1, "defense": 0},
+	"calm": {"tick_seconds": 0.4, "growth_every": 3, "shield": 5},
+	"fast": {"tick_seconds": 0.25, "growth_every": 1, "shield": 0},
 }
 const DEFAULT_PACE := "calm"
 
@@ -80,7 +80,7 @@ func _init(p_config: Dictionary = {}) -> void:
 	var pace: Dictionary = PACES.get(str(config.get("pace", DEFAULT_PACE)), PACES[DEFAULT_PACE])
 	tick_seconds = float(pace["tick_seconds"])
 	world.growth_every = int(pace["growth_every"])
-	world.defense = int(pace["defense"])
+	world.shield = int(pace["shield"])
 	# the easier training retry: your starting planets hold more ships
 	var head_start: float = float(config.get("head_start", 1.0))
 	if head_start != 1.0:

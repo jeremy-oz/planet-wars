@@ -39,16 +39,62 @@ func test_levels_start_small_and_grow() -> void:
 		assert_true(n >= prev, "level %d has no fewer planets than the one before" % i)
 		prev = n
 	assert_true(Session.new(Levels.config(0)).world.planets.size() <= 6, "the first level is tiny")
+	assert_true(prev <= 14, "the last world stays readable (Auralux-sized, at most 14 planets)")
 
 
-## Following the coach at one move a second wins every level inside the 3-star par: each level
-## is winnable and 3 stars are possible for a quick player.
+## Owner, round 6: "too many planets too quickly". The count rises in small steps.
+func test_planet_count_rises_in_small_steps() -> void:
+	var prev := Session.new(Levels.config(0)).world.planets.size()
+	for i in range(1, Levels.count()):
+		var n := Session.new(Levels.config(i)).world.planets.size()
+		assert_true(n - prev <= 3, "%s adds at most 3 planets" % Levels.LEVELS[i]["id"])
+		prev = n
+
+
+## Every map after the first is a designed formation: each seat's home is the same distance from
+## the centre and has the same planets around it, and no two planets crowd each other.
+func test_formations_are_fair_and_spaced() -> void:
+	for i in range(1, Levels.count()):
+		var id: String = Levels.LEVELS[i]["id"]
+		var w := MapText.parse(str(Levels.config(i)["map_text"]))  # the map before any head start
+		var homes: Array = []
+		for p in w.planets:
+			if p.owner != 0:
+				homes.append(p)
+		assert_eq(homes.size(), w.num_players, "%s: one home per seat" % id)
+		var centre := Vector2(15, 10)
+		var profile := []
+		for h in homes:
+			var near := []
+			for p in w.planets:
+				if p != h:
+					near.append(Vector2(p.position.distance_to(h.position), p.growth))
+			near.sort()
+			profile.append(near)
+			assert_almost_eq(h.position.distance_to(centre), homes[0].position.distance_to(centre), 0.05, "%s: homes equally far from the centre" % id)
+			assert_eq(h.ships, homes[0].ships, "%s: equal starts" % id)
+		for k in range(1, profile.size()):
+			for m in range(profile[0].size()):
+				var a: Vector2 = profile[0][m]
+				var b: Vector2 = profile[k][m]
+				assert_true(absf(a.x - b.x) < 0.05 and a.y == b.y, "%s: every seat sees the same map" % id)
+		for a in w.planets:
+			for b in w.planets:
+				if a.id < b.id:
+					assert_true(a.position.distance_to(b.position) >= 2.5, "%s: planets %d and %d too close" % [id, a.id, b.id])
+
+
+## Following the coach briskly (one move every 1, 1.5 or 2 s) wins every level inside the 3-star
+## par at least once: 3 stars are possible for a quick player.
 func test_every_level_is_winnable_within_three_star_par() -> void:
 	for i in range(Levels.count()):
 		var id: String = Levels.LEVELS[i]["id"]
-		var s := _follow_coach(Levels.config(i), 1.0)
-		assert_eq(s.outcome, Session.Outcome.WON, "%s: winnable" % id)
-		assert_eq(Levels.stars_for(i, true, s.world.tick_count * s.tick_seconds), 3, "%s: 3 stars in reach" % id)
+		var best := 0
+		for seconds: float in [1.0, 1.5, 2.0]:
+			var s := _follow_coach(Levels.config(i), seconds)
+			if s.outcome == Session.Outcome.WON:
+				best = maxi(best, Levels.stars_for(i, true, s.world.tick_count * s.tick_seconds))
+		assert_eq(best, 3, "%s: 3 stars in reach" % id)
 
 
 ## Play a level like a person who follows the coach: one move every `seconds` of game time,

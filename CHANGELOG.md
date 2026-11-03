@@ -5,10 +5,12 @@ All notable changes to Planet Wars. Format follows [Keep a Changelog](https://ke
 ## [Unreleased]
 
 ### Changed — Iteration 2, round 5 (owner: planets flip too fast, it's a clicking race)
-- New default **Calm** pace: planets grow about 5× slower, fleets fly a bit slower, and ships on a
-  planet you own defend at double strength. Battles take tens of seconds and plans beat fast clicks.
-  The old pace stays as **Fast** in Skirmish (new Pace option). Training is rebalanced for Calm,
-  and Venus's lesson teaches the double-strength rule. Attack previews include it.
+- New default **Calm** pace: planets grow about 5× slower, fleets fly a bit slower, and every planet
+  you own has a shield (5 ships per level dot) that attackers must break first. Battles take tens of
+  seconds and plans beat fast clicks. The old pace stays as **Fast** in Skirmish (new Pace option).
+  Training is rebalanced for Calm, and Venus's lesson teaches the shield. Attack previews include it.
+- Training maps are designed, symmetric formations (lines, diamonds, rings, triangles, spokes)
+  instead of random scatters, and grow gently: 5, 6, 7, 8, 9, 10, 10, 13, 13 planets (was up to 24).
 
 ### Changed — Iteration 2, round 4 (owner: fleets all look the same size)
 - Fleets show their strength: one dot per ship up to 80, and a bigger fleet is wider, longer and

@@ -13,7 +13,7 @@ const BOT_NOTES := {
 	"greedy": "picks the best-value targets and snowballs",
 }
 const PACE_NOTES := {
-	"calm": "Calm: planets grow slowly and defend at double strength — plan your attacks",
+	"calm": "Calm: planets grow slowly and owned planets are shielded — plan one strong attack",
 	"fast": "Fast: the arcade pace — planets grow quickly and change hands in seconds",
 }
 

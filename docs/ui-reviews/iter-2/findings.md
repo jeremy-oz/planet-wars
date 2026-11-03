@@ -132,9 +132,20 @@ Owner, verbatim: "for some reasons, the planet changes hands very quickly so it'
 
 **Reference research** (Auralux, Galcon, Eufloria): production around 1–4 units a second per planet, matches of 10–20 minutes, defenders with an edge (orbiting units, planet health), captures that take time, and difficulty from maps rather than faster AI. Auralux's own pitch: "quick reflexes will get you nowhere".
 
-1. **Calm pace (default).** Growth about 5× slower, fleets 2.5 units a second, and a planet's own ships defend at double strength. Your planets lost per minute fell to 0–8, and every world is won following the coach at one move every 1, 2 or 3 seconds.
+1. **Calm pace (default).** Growth about 5× slower, fleets 2.5 units a second, and a planet's own ships defend at double strength (replaced in round 6 by a flat shield). Your planets lost per minute fell to 0–8, and every world is won following the coach at one move every 1, 2 or 3 seconds.
 2. **Teach it.** Venus's lesson: "Ships on a planet you own defend at double strength: 10 at home beat 19 attackers." The attack preview counts the edge ("37 vs 41 · not enough").
 3. **Fast stays as an option.** Skirmish has a Pace row (Calm / Fast); the opponent note shows how often it thinks at that pace.
 
 Training stars were re-set from the calm runs. Deferred to Iteration 4: two-step captures, combat in space, a send-all shortcut, difficulty from maps rather than bot speed.
+
+## Round 6 — owner, 2026-11-03
+
+Owner, verbatim: "Also too many plants too quickly . Check Auralux for the formations" (read as planets).
+
+**Research** (Auralux, Auralux: Constellations): maps are hand-placed and symmetric; each home has a few starter planets of its own; one obvious contested centre; a few big planets rather than many small ones; counts rise in small steps, from about 4–8 early to 12–20 late. Our ladder went 5 → 24 with random scatters from Mars on.
+
+1. **Formations.** Every training map is now designed and symmetric: Mercury a line with a big centre, Venus a diamond, Mars an hourglass, Jupiter a ring around a hub, Saturn a triangle, Uranus two front lines and a centre, Neptune three spokes, Pluto two rings and a hub. Counts: 5, 6, 7, 8, 9, 10, 10, 13, 13. Tests check every seat sees the same map and no planets crowd.
+2. **Shield instead of double strength.** Testing the formations showed the 2× rule stalemates symmetric maps: an untouched planet's growth counted double, so nobody could ever break it. Owned planets now have a flat shield, 5 ships per level dot, which the attacker must break first and which is back next tick. One strong attack beats several small ones. The Venus lesson teaches it.
+3. **Fair, then tilted.** Harder worlds give you a bigger starting fleet instead of a lopsided map.
+4. **Readable on a wide screen.** Jupiter's ring is an oval and Saturn's triangle is drawn tighter, so planets stay large. (Tightening Neptune and Pluto changed how the two commanders fight and made them unwinnable, so they keep their wider layouts.)
 
