@@ -7,8 +7,8 @@
 ##
 ## Tuned for a person, not a bot. tests/game/test_training.gd plays every world by following the
 ## coach's advice with one move every two seconds (a relaxed human pace) and must win. Pars come
-## from those runs: 3 stars ≈ 2× the time at one move a second + 15 s (never under a fast bot's time);
-## 2 stars ≈ 1.5× the slower of the two- and two-and-a-half-second runs + 30 s.
+## from those runs at the calm pace: 3 stars ≈ 1.6× the time at one move a second + 15 s; 2 stars ≈
+## 1.5× the slower of the two- and two-and-a-half-second runs + 30 s (at least 1.3× the 3-star par).
 extends RefCounted
 
 ## Training commanders move like a person: one fleet per decision (see Session "bot_moves").
@@ -27,7 +27,7 @@ const LEVELS: Array[Dictionary] = [
 			{"text": "The orange planet is the enemy. Take every planet to win. Stuck? Press H or HINT and the coach shows a good move.", "wait": "ok", "focus": ["enemy"]},
 		],
 		"brief": "Send ships, take planets. Take them all to win.",
-		"bots": ["random"], "difficulty": "relaxed", "seed": 1, "par": [50, 40],
+		"bots": ["random"], "difficulty": "relaxed", "seed": 1, "par": [70, 50],
 		"map_text": "# players: 2\nP 5 10 1 30 3\nP 10 6 0 6 1\nP 10 14 0 6 1\nP 15 10 0 12 2\nP 22 10 2 10 1\n",
 	},
 	{
@@ -37,17 +37,18 @@ const LEVELS: Array[Dictionary] = [
 			{"text": "Start cheap: take {cheap} first, then save up for the big one.", "wait": "send", "arrow": ["home", "cheap"]},
 		],
 		"brief": "More dots around a planet = higher level = more ships grown. Big ones cost more to take.",
-		"bots": ["random"], "difficulty": "relaxed", "seed": 2, "par": [65, 55],
+		"bots": ["random"], "difficulty": "relaxed", "seed": 2, "par": [90, 70],
 		"map_text": "# players: 2\nP 5 10 1 30 3\nP 9 5 0 5 1\nP 9 15 0 5 1\nP 14 10 0 30 5\nP 19 5 0 10 2\nP 19 15 0 10 2\nP 25 10 2 20 2\n",
 	},
 	{
 		"id": "venus", "body": "venus", "title": "Venus",
 		"lesson": [
-			{"text": "Venus attacks planets you leave empty. Keys 1–4 (or the buttons at the bottom) choose how much to send: a quarter, half, three quarters or all.", "wait": "ok", "focus": ["enemy"]},
+			{"text": "Ships on a planet you own defend at double strength: 10 at home beat 19 attackers. Venus attacks planets you leave empty.", "wait": "ok", "focus": ["home"]},
+			{"text": "Keys 1–4 (or the buttons at the bottom) choose how much to send: a quarter, half, three quarters or all.", "wait": "ok", "focus": ["enemy"]},
 			{"text": "Press 1 to send just a quarter, and keep the rest home.", "wait": "fraction"},
 		],
-		"brief": "Venus fights back. Keys 1–4 send a quarter, half, three quarters or all — keep some home.",
-		"bots": ["nearest"], "difficulty": "gentle", "seed": 3, "par": [80, 60],
+		"brief": "Venus fights back. Ships at home defend double — keys 1–4 send part and keep some home.",
+		"bots": ["nearest"], "difficulty": "gentle", "seed": 3, "par": [150, 115],
 		"map_text": "# players: 2\nP 4 10 1 40 3\nP 26 10 2 40 3\nP 9 5 0 8 2\nP 9 15 0 8 2\nP 21 5 0 8 2\nP 21 15 0 8 2\nP 15 7 0 25 4\nP 15 13 0 25 4\n",
 	},
 	{
@@ -57,7 +58,7 @@ const LEVELS: Array[Dictionary] = [
 			{"text": "You have two planets now. Drag a box around both (or shift-click each), then click a target: they launch together.", "wait": "select_many", "after": "own:2"},
 		],
 		"brief": "Drag a box or shift-click to send from several planets at once.",
-		"bots": ["nearest"], "difficulty": "gentle", "seed": 404, "planets": 10, "par": [110, 65],
+		"bots": ["nearest"], "difficulty": "gentle", "seed": 404, "planets": 10, "par": [170, 100],
 	},
 	{
 		"id": "jupiter", "body": "jupiter", "title": "Jupiter",
@@ -65,7 +66,7 @@ const LEVELS: Array[Dictionary] = [
 			{"text": "Jupiter's commander hunts the cheapest planet in reach. When the coach warns you, reinforce the planet under attack.", "wait": "ok", "focus": ["enemy"]},
 		],
 		"brief": "Jupiter's commander hunts the cheapest planet in reach. Don't leave one empty.",
-		"bots": ["greedy"], "difficulty": "gentle", "seed": 4507, "planets": 12, "par": [195, 75],
+		"bots": ["greedy"], "difficulty": "gentle", "seed": 4507, "planets": 12, "par": [190, 140],
 	},
 	{
 		"id": "saturn", "body": "saturn", "title": "Saturn",
@@ -73,7 +74,7 @@ const LEVELS: Array[Dictionary] = [
 			{"text": "Two opponents, and they fight each other too. Grow quietly, let them trade ships, then take what's left.", "wait": "ok"},
 		],
 		"brief": "Two opponents. Let them fight each other, then take what's left.",
-		"bots": ["nearest", "random"], "difficulty": "relaxed", "seed": 5137, "planets": 14, "par": [95, 65],
+		"bots": ["nearest", "random"], "difficulty": "relaxed", "seed": 5137, "planets": 14, "par": [190, 145],
 	},
 	{
 		"id": "uranus", "body": "uranus", "title": "Uranus",
@@ -81,7 +82,7 @@ const LEVELS: Array[Dictionary] = [
 			{"text": "Hold your front line: planets close to the enemy keep their ships. Planets behind them send theirs forward.", "wait": "ok", "focus": ["enemy"]},
 		],
 		"brief": "A sharper commander. Hold your front line and grow behind it.",
-		"bots": ["greedy"], "difficulty": "relaxed", "seed": 6100, "planets": 16, "par": [335, 120],
+		"bots": ["greedy"], "difficulty": "relaxed", "seed": 6100, "planets": 16, "par": [190, 105],
 	},
 	{
 		"id": "neptune", "body": "neptune", "title": "Neptune",
@@ -89,7 +90,7 @@ const LEVELS: Array[Dictionary] = [
 			{"text": "A wide map and two commanders. When you're ahead, press + to speed the game up.", "wait": "speed"},
 		],
 		"brief": "Two greedy commanders on a wide map. Speed up with + when you're winning.",
-		"bots": ["greedy", "greedy"], "difficulty": "gentle", "seed": 7137, "planets": 20, "par": [790, 300],
+		"bots": ["greedy", "greedy"], "difficulty": "gentle", "seed": 7137, "planets": 20, "par": [450, 310],
 	},
 	{
 		"id": "pluto", "body": "pluto", "title": "Pluto",
@@ -98,7 +99,7 @@ const LEVELS: Array[Dictionary] = [
 			{"text": "The edge of the solar system. From here the coach only speaks up when a planet is in danger. H still asks for a hint.", "wait": "ok"},
 		],
 		"brief": "The edge of the solar system: two sharp commanders. Everything you've learned.",
-		"bots": ["greedy", "greedy"], "difficulty": "gentle", "seed": 8433, "planets": 24, "par": [880, 195],
+		"bots": ["greedy", "greedy"], "difficulty": "gentle", "seed": 8433, "planets": 24, "par": [410, 260],
 	},
 ]
 

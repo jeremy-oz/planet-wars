@@ -1,6 +1,6 @@
 ## The game: camera, map, HUD, speed, pause, results. Owns a Session and steps it on a timer.
 ##
-## Sim time: one tick every TICK_SECONDS at 1×. Rendering interpolates between ticks.
+## Sim time: one tick every session.tick_seconds at 1× (set by the pace). Rendering interpolates between ticks.
 extends Node2D
 
 const Palette := preload("res://game/theme/palette.gd")
@@ -17,7 +17,6 @@ const Coach := preload("res://game/training/coach.gd")
 const Bodies := preload("res://game/fx/bodies.gd")
 
 const HUMAN := 1
-const TICK_SECONDS := 0.25
 const SPEEDS := [0.5, 1.0, 2.0, 4.0]
 const SPEED_LABELS := ["½×", "1×", "2×", "4×"]
 const FRACTIONS := [0.25, 0.5, 0.75, 1.0]
@@ -92,6 +91,7 @@ func _ready() -> void:
 			var title: String = Bodies.TITLES[Bodies.NAMES[layer]]
 			names.append(title.capitalize() if title.begins_with("the ") else title)
 		coach = Coach.new(session.world, level, names)
+		coach.growth_per_second = 1.0 / (session.tick_seconds * session.world.growth_every)
 	_build_hud()
 	_fit_camera()
 	get_viewport().size_changed.connect(_fit_camera)
@@ -112,7 +112,7 @@ func _process(delta: float) -> void:
 		return
 	if not paused and not _ended and not (coach != null and coach.holding()):
 		session.think_ahead(1)
-		_acc += delta * SPEEDS[speed_index] / TICK_SECONDS
+		_acc += delta * SPEEDS[speed_index] / session.tick_seconds
 		var steps := 0
 		while _acc >= 1.0 and steps < MAX_STEPS_PER_FRAME:
 			_acc -= 1.0
@@ -145,7 +145,7 @@ func _step() -> void:
 	sim_usec += spent
 	sim_steps += 1
 	sim_worst_usec = maxi(sim_worst_usec, spent)
-	_game_seconds += TICK_SECONDS
+	_game_seconds += session.tick_seconds
 	map_view.on_events(events)
 	_react(events)
 	if coach != null:

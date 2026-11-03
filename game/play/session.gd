@@ -13,9 +13,19 @@ const GreedyBot := preload("res://sim/bots/greedy_bot.gd")
 
 const HUMAN := 1
 const BOT_KINDS := ["random", "nearest", "greedy"]
-## Ticks between bot decisions, by difficulty (1 tick = 0.25 s at 1× speed).
+## Ticks between bot decisions, by difficulty (a tick is `tick_seconds`: 0.5 s calm, 0.25 s fast).
 const THINK_EVERY := {"easy": 12, "gentle": 8, "relaxed": 4, "normal": 2, "sharp": 1}
 const MAP_SIZES := {"small": 12, "medium": 24, "large": 48, "huge": 200}
+## Match pace: seconds per tick at 1× (fleets fly 1 unit per tick), ticks per growth step, and the
+## garrison edge in percent (sim/world.gd `defense`). "fast" is the original arcade pace: a top
+## planet makes 20 ships/s and planets flip in seconds. "calm" is the default (owner play-test,
+## round 5): about 4 ships/s, fleets at 2.5 units/s, and garrisons fight at 2x, so a planet you
+## hold is worth defending and the game rewards plans over fast clicks.
+const PACES := {
+	"calm": {"tick_seconds": 0.4, "growth_every": 3, "defense": 100},
+	"fast": {"tick_seconds": 0.25, "growth_every": 1, "defense": 0},
+}
+const DEFAULT_PACE := "calm"
 
 enum Outcome { PLAYING, WON, LOST }
 
@@ -30,13 +40,15 @@ var stats: Dictionary = {}
 var history: Array = []
 ## Ships currently in flight, all players (updated every step).
 var ships_in_flight := 0
+## Seconds per tick at 1× speed, from the pace.
+var tick_seconds := 0.25
 var _pending: Array = []
 var _prepared: Dictionary = {}  # player -> orders decided for tick _prepared_tick
 var _prepared_tick := -1
 
 
 static func default_config() -> Dictionary:
-	return {"seed": 1, "opponents": 1, "bot": "greedy", "difficulty": "normal", "map": "medium", "spectate": false}
+	return {"seed": 1, "opponents": 1, "bot": "greedy", "difficulty": "normal", "map": "medium", "pace": DEFAULT_PACE, "spectate": false}
 
 
 static func make_bot(kind: String, bot_seed: int) -> RefCounted:
@@ -65,6 +77,10 @@ func _init(p_config: Dictionary = {}) -> void:
 		var size_scale := sqrt(maxf(1.0, planet_count / 16.0))
 		world = MapText.parse(MapGenerator.generate(map_seed, players, planet_count, Vector2(30.0, 20.0) * size_scale), map_seed)
 	world.max_ticks = int(config.get("max_ticks", 1 << 30))
+	var pace: Dictionary = PACES.get(str(config.get("pace", DEFAULT_PACE)), PACES[DEFAULT_PACE])
+	tick_seconds = float(pace["tick_seconds"])
+	world.growth_every = int(pace["growth_every"])
+	world.defense = int(pace["defense"])
 	# the easier training retry: your starting planets hold more ships
 	var head_start: float = float(config.get("head_start", 1.0))
 	if head_start != 1.0:
@@ -150,9 +166,10 @@ func step() -> Array:
 			by[f.owner] = int(by.get(f.owner, 0)) + f.ships
 	var defenders := PackedInt32Array()
 	for pl in world.planets:
-		defenders.append(pl.ships + (pl.growth if pl.owner != 0 else 0))
+		var grows := pl.growth * world.growth_ticks(1)
+		defenders.append(pl.ships + (grows if pl.owner != 0 else 0))
 		if pl.owner != 0:
-			stats[pl.owner]["produced"] += pl.growth
+			stats[pl.owner]["produced"] += grows
 
 	world.tick([])  # orders already applied above; tick() applies none, then grows, moves, resolves
 

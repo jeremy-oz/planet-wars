@@ -5,7 +5,6 @@ const Levels := preload("res://game/training/levels.gd")
 const Progress := preload("res://game/training/progress.gd")
 const Session := preload("res://game/play/session.gd")
 const Bodies := preload("res://game/fx/bodies.gd")
-const GreedyBot := preload("res://sim/bots/greedy_bot.gd")
 const CoachBot := preload("res://sim/bots/coach_bot.gd")
 const Coach := preload("res://game/training/coach.gd")
 const MapText := preload("res://sim/map_text.gd")
@@ -42,28 +41,24 @@ func test_levels_start_small_and_grow() -> void:
 	assert_true(Session.new(Levels.config(0)).world.planets.size() <= 6, "the first level is tiny")
 
 
-## A Greedy bot in your seat wins every level, inside the 3-star par: each level is winnable,
-## and 3 stars are possible. (It reacts every tick, so a person needs longer; see levels.gd.)
+## Following the coach at one move a second wins every level inside the 3-star par: each level
+## is winnable and 3 stars are possible for a quick player.
 func test_every_level_is_winnable_within_three_star_par() -> void:
 	for i in range(Levels.count()):
-		var s := Session.new(Levels.config(i))
-		s.autopilot = GreedyBot.new(17)
-		var ticks := 0
-		while s.outcome == Session.Outcome.PLAYING and ticks < 4000:
-			s.step()
-			ticks += 1
 		var id: String = Levels.LEVELS[i]["id"]
+		var s := _follow_coach(Levels.config(i), 1.0)
 		assert_eq(s.outcome, Session.Outcome.WON, "%s: winnable" % id)
-		assert_eq(Levels.stars_for(i, true, ticks * 0.25), 3, "%s: 3 stars in reach" % id)
+		assert_eq(Levels.stars_for(i, true, s.world.tick_count * s.tick_seconds), 3, "%s: 3 stars in reach" % id)
 
 
-## Play a level like a person who follows the coach: one move every `every` ticks (8 = 2 s),
+## Play a level like a person who follows the coach: one move every `seconds` of game time,
 ## through the real send path (queue_send with the 25/50/75/100 % share keys).
-func _follow_coach(cfg: Dictionary, every: int) -> Session:
+func _follow_coach(cfg: Dictionary, seconds: float) -> Session:
 	var s := Session.new(cfg)
 	var advisor := CoachBot.new(0)
+	var every := maxi(1, int(round(seconds / s.tick_seconds)))
 	var t := 0
-	while s.outcome == Session.Outcome.PLAYING and t < 3200:
+	while s.outcome == Session.Outcome.PLAYING and t * s.tick_seconds < 800.0 * 1.25:
 		if t % every == 0:
 			var a := advisor.advise(s.world, 1)
 			if not a.is_empty():
@@ -86,10 +81,10 @@ func test_every_world_is_winnable_at_a_human_pace_by_following_the_coach() -> vo
 	for i in range(Levels.count()):
 		var id: String = Levels.LEVELS[i]["id"]
 		for assist: bool in [false, true]:
-			var s := _follow_coach(Levels.config(i, assist), 8)
+			var s := _follow_coach(Levels.config(i, assist), 2.0)
 			assert_eq(s.outcome, Session.Outcome.WON, "%s%s: won at one move every 2 s" % [id, " (easier)" if assist else ""])
 			if not assist:
-				assert_true(Levels.stars_for(i, true, s.world.tick_count * 0.25) >= 2, "%s: 2 stars at that pace" % id)
+				assert_true(Levels.stars_for(i, true, s.world.tick_count * s.tick_seconds) >= 2, "%s: 2 stars at that pace" % id)
 
 
 func test_the_easier_retry_is_easier_and_worth_one_star() -> void:
@@ -183,7 +178,7 @@ func test_the_coach_points_at_a_move_when_you_sit_idle() -> void:
 func test_stars_by_time() -> void:
 	assert_eq(Levels.stars_for(0, false, 10.0), 0)
 	assert_eq(Levels.stars_for(0, true, 10.0), 3)
-	assert_eq(Levels.stars_for(0, true, 45.0), 2)
+	assert_eq(Levels.stars_for(0, true, 60.0), 2)
 	assert_eq(Levels.stars_for(0, true, 999.0), 1)
 
 

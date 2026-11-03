@@ -77,3 +77,14 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 ### Iteration 2, round 4 (owner: Uranus is hard, visuals "200 % better", fleets look the same size)
 - Fleet size follows ship count much more strongly (one dot per ship up to 80; width, length, dot size and glow ∝ √ships) — the old √ships scaling was too gentle to read; √ keeps a 300-ship stream from covering the map.
 - Uranus left as it is — the owner called being stuck "not necessarily bad", and the easier retry after two losses already covers it.
+
+### Iteration 2, round 5 (owner: "planets change hands very quickly … clicking correctly and quickly becomes very important", Uranus)
+- Pacing pass pulled forward from Iteration 4 — owner's choice, because the complaint is the game's core feel, not polish.
+- Tune against a measured number (your planets lost per minute while following the coach) — it was 5–20 at the old pace on the late worlds, and the reference research (Auralux, Galcon, Eufloria) pointed at production 5–10× lower than ours and at defenders having an edge.
+- Calm pace = 0.4 s ticks (fleets 2.5 units/s), growth every 3rd tick (top planet ≈ 4 ships/s), garrison edge 100 % — the variant that cut your planets lost to 0–8 a minute and won every world at one move every 1, 2 and 3 s; slower growth alone (or a 50 % edge) still left Neptune and Pluto churning.
+- Garrison edge applies to owned planets only, not neutrals — expansion costs stay readable from the number on the planet; holding is what gets cheaper.
+- Growth pacing and the edge are match settings in the sim (`growth_every`, `defense`, SPEC §4–§5) — with the defaults (1, 0) the 2010 rules are unchanged, so all sim tests and the map corpus still hold.
+- Fast stays as a Skirmish option — some players will want the arcade pace, and the plan's Iteration 4 asks for both presets.
+- The 3-star test follows the coach at one move a second instead of the Greedy autopilot — under the edge the coach plays better than Greedy (Greedy now loses Pluto), and stars should measure play a person can reach.
+- Two-step captures, combat in space, a "send all" shortcut and difficulty from maps go to Iteration 4 — each is a bigger rules or UI change, and the calm pace already fixed the measured problem.
+

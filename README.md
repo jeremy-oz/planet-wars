@@ -14,6 +14,9 @@ launch from Earth; take every planet to win, faster for more stars. Each world o
 lesson, and a coach points at a good move when you're stuck (press **H** for a hint any time).
 Lost twice? Try the easier retry. **Skirmish** sets up your own map, bots and difficulty.
 
+Ships on a planet you own defend at double strength, so plan attacks with enough to win. Skirmish
+also offers a Fast pace (the arcade feel).
+
 Drag from your blue planet to another to send ships. Click to select, click a target to send;
 1–4 set how much to send; space pauses; Esc opens the menu. The dots around a planet are its
 level: more dots, more ships grown.

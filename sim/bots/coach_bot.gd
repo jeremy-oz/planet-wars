@@ -62,7 +62,7 @@ func advise(world: World, player: int) -> Dictionary:
 		if not threat.has(m.id):
 			continue
 		var eta: int = first_eta[m.id]
-		var short: int = int(threat[m.id]) - m.ships - m.growth * eta - int(incoming.get(m.id, 0)) + 1
+		var short: int = int(threat[m.id]) - world.garrison_strength(player, m.ships + m.growth * world.growth_ticks(eta)) - int(incoming.get(m.id, 0)) + 1
 		if short < 1:
 			continue
 		for h in mine:
@@ -91,9 +91,7 @@ func advise(world: World, player: int) -> Dictionary:
 			group.append(src.id)
 			pooled += int(spare[src.id])
 			var tt := world.travel_time(src.id, t.id)  # the slowest of the group so far
-			var needed: int = t.ships + 1 - int(incoming.get(t.id, 0))
-			if t.owner != 0:
-				needed += t.growth * tt
+			var needed: int = world.ships_to_take(t.id, tt) - int(incoming.get(t.id, 0))
 			if needed < 1 or needed > pooled:
 				continue
 			# a strike also removes the enemy's growth: worth twice a neutral of the same size;

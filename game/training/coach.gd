@@ -15,7 +15,8 @@ const HUMAN := 1
 const IDLE_SECONDS := 6.0  ## no send for this long and a good move exists: point at it
 const HINT_SECONDS := 8.0  ## a hint fades after this long (or as soon as you send)
 const DEFEND_COOLDOWN := 6.0  ## seconds before warning about the same planet again
-const TICKS_PER_SECOND := 4
+## Ships a planet adds per second for each growth level; the game screen sets it from the pace.
+var growth_per_second := 4.0
 
 var world: World
 var names := PackedStringArray()  ## display name per planet ("Earth", "Io", ...)
@@ -158,8 +159,8 @@ func describe(a: Dictionary) -> String:
 		"strike":
 			return "%s has only %d ships. Strike it from %s before it grows.%s" % [names[dst], t.ships, from, together]
 		_:
-			var per_second: int = t.growth * TICKS_PER_SECOND
-			return "Your ships are waiting. Take %s from %s: it adds %d ships a second once it's yours.%s" % [names[dst], from, per_second, together]
+			var per_ten := int(round(t.growth * growth_per_second * 10.0))
+			return "Your ships are waiting. Take %s from %s: it adds %d ships every 10 seconds once it's yours.%s" % [names[dst], from, per_ten, together]
 
 
 func _list(ids: PackedInt32Array) -> String:

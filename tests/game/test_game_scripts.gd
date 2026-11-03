@@ -45,9 +45,10 @@ func test_screens_build_and_switch() -> void:
 	assert_eq(game.get_script().resource_path, "res://game/play/game_screen.gd")
 	for i in range(12):
 		game._process(0.1)
-	assert_true(game.session.world.tick_count >= 4, "1× speed steps about 4 ticks per second")
+	assert_eq(game.session.config.get("pace", "calm"), "calm", "calm is the default pace")
+	assert_true(game.session.world.tick_count >= 2, "1× calm steps 2.5 ticks per second")
 	game.map_view.send_requested.emit(PackedInt32Array([0]), 2)
-	game._process(0.3)
+	game._process(0.45)  # one calm tick is 0.4 s
 	assert_true(game.session.stats[1]["fleets"] >= 1, "a UI send reaches the sim")
 	game.set_speed(3)
 	assert_eq(game.speed_index, 3)

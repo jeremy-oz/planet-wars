@@ -8,7 +8,7 @@ See `docs/SPEC.md` for the rules. Everything is preloaded by path, nothing uses 
 
 | File | What |
 |---|---|
-| `world.gd` | `World` with inner `Planet`, `Fleet`, `Order`; `tick()`, `apply_orders()`, `winner()`, `state_hash()`. |
+| `world.gd` | `World` with inner `Planet`, `Fleet`, `Order`; `tick()`, `apply_orders()`, `winner()`, `state_hash()`. Pace settings `growth_every` and `defense` (garrison edge, %); `ships_to_take()` prices both for bots and previews. |
 | `map_text.gd` | `parse(text) -> World` (null + `last_error` on bad input), `serialize(world) -> String`. |
 | `map_generator.gd` | `generate(seed, players, planets, size) -> String` map text; seed fully identifies the map. |
 | `ascii.gd` | `render(world) -> String` for debugging; never prints. |

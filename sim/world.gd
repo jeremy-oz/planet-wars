@@ -61,6 +61,11 @@ var fleets: Array[Fleet] = []
 var num_players: int = 0
 var tick_count: int = 0
 var max_ticks: int = DEFAULT_MAX_TICKS
+## Owned planets grow on ticks where tick_count % growth_every == 0 (SPEC §4 step 2). 1 = every tick.
+var growth_every: int = 1
+## Garrison edge in percent (SPEC §5): an owned planet's own ships fight as
+## ships * (100 + defense) / 100. Neutral planets and arriving fleets get no edge. 0 = the 2010 rule.
+var defense: int = 0
 var seed: int = 0
 ## Seeded RNG for anything in the sim that needs randomness (currently only map generation).
 var rng := RandomNumberGenerator.new()
@@ -91,6 +96,31 @@ func add_fleet(owner: int, ships: int, source: int, destination: int, trip_lengt
 	if owner > num_players:
 		num_players = owner
 	return f
+
+
+## A garrison's fighting strength: owned planets get the `defense` edge, neutrals do not.
+func garrison_strength(owner: int, ships: int) -> int:
+	if owner == 0 or defense == 0:
+		return ships
+	return ships * (100 + defense) / 100
+
+
+## Ships a fleet arriving in `ticks` must carry to take `planet` (ignoring other fleets): the
+## garrison after growth, with its edge, plus one.
+func ships_to_take(planet: int, ticks: int) -> int:
+	var p := planets[planet]
+	var later := p.ships + (p.growth * growth_ticks(ticks) if p.owner != 0 else 0)
+	return garrison_strength(p.owner, later) + 1
+
+
+## How many growth steps happen in the next `ticks` ticks (this tick included). With
+## growth_every = 1 that is `ticks`; bots and previews multiply a planet's growth by it.
+func growth_ticks(ticks: int) -> int:
+	if ticks <= 0:
+		return 0
+	var n := maxi(growth_every, 1)
+	var t0 := tick_count
+	return floori(float(t0 + ticks - 1) / n) - floori(float(t0 - 1) / n)
 
 
 # --- geometry -----------------------------------------------------------------------------
@@ -152,9 +182,10 @@ func apply_orders(orders: Array) -> int:
 ## SPEC §4. One step of the simulation with this tick's orders (any player, any order).
 func tick(orders: Array = []) -> void:
 	apply_orders(orders)
-	for p in planets:
-		if p.owner != 0:
-			p.ships += p.growth
+	if tick_count % maxi(growth_every, 1) == 0:
+		for p in planets:
+			if p.owner != 0:
+				p.ships += p.growth
 	var still_flying: Array[Fleet] = []
 	var arrivals: Dictionary = {}  # destination -> Array[Fleet]
 	for f in fleets:
@@ -176,11 +207,13 @@ func tick(orders: Array = []) -> void:
 ## SPEC §5: simultaneous combat. Only the two largest forces matter.
 func _resolve(planet: Planet, arriving: Array) -> void:
 	var force: Dictionary = {}  # owner -> ships
-	force[planet.owner] = planet.ships
+	var home: int = planet.owner
+	var garrison := garrison_strength(planet.owner, planet.ships)
+	force[home] = garrison
 	for f: Fleet in arriving:
 		force[f.owner] = force.get(f.owner, 0) + f.ships
 	if force.size() == 1:
-		planet.ships = force[planet.owner]
+		planet.ships = planet.ships + force[home] - garrison  # reinforcement: no fight, no edge
 		return
 	var owners := force.keys()
 	owners.sort()
@@ -199,6 +232,13 @@ func _resolve(planet: Planet, arriving: Array) -> void:
 		planet.ships = 0  # tie: current owner keeps the planet with nothing on it
 		return
 	planet.ships = top - second
+	if top_owner == home and home != 0 and defense != 0:
+		# The owner held with the garrison's edge: arriving friends absorb the damage first, then
+		# what is left of the garrison's effective strength converts back to real ships.
+		var friends: int = top - garrison
+		var hurt := maxi(second - friends, 0)
+		var kept := garrison - hurt
+		planet.ships = maxi(friends - second, 0) + (kept * 100 + 99 + defense) / (100 + defense)
 	planet.owner = top_owner
 
 

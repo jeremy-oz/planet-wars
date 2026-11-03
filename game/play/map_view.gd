@@ -591,7 +591,7 @@ func _draw_preview(ci: CanvasItem, sources: PackedInt32Array, target: int) -> vo
 		for s in sources:
 			if s != target:
 				trip = maxi(trip, world.travel_time(s, target))
-		var defenders := t.ships + (t.growth * trip if t.owner != 0 else 0)
+		var defenders := world.ships_to_take(target, trip) - 1  # with growth and the garrison edge
 		var wins := estimate_ships > defenders
 		text = "%d vs %d  ·  %s" % [estimate_ships, defenders, "takes it" if wins else "not enough"]
 		col = WIN_COLOR if wins else LOSE_COLOR

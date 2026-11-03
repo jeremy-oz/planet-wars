@@ -123,3 +123,18 @@ Owner, verbatim: "1. okay for now. i will keep testing it 2. now i am stuck in U
 1. **Fleets show their size.** Streams already grew with √ships, but too gently to notice. Now a fleet draws one dot per ship (up to 80), and its width, length, dot size and head glow grow clearly with √ships: 2 ships are a faint wisp, 30 a stream, 120 a wide bright swarm. `--quick-shots` adds `f_fleets` (2 / 8 / 30 / 120 side by side).
 
 Uranus balance unchanged (the owner's call); the easier retry after two losses covers it.
+
+## Round 5 — owner play-test, 2026-11-03
+
+Owner, verbatim: "for some reasons, the planet changes hands very quickly so it's not as entertaining. and be able to click correctly and quickly becomes very important so it's less a strategy game now (based on Uranus)" and "you might need to investigate the UI and design of our reference games". Follow-up: do the pacing pass now, in Iteration 2.
+
+**Measured.** Following the coach on every world, the old pace lost you 5–20 planets a minute from Jupiter on (a planet every 3–12 s). A top planet made 20 ships a second.
+
+**Reference research** (Auralux, Galcon, Eufloria): production around 1–4 units a second per planet, matches of 10–20 minutes, defenders with an edge (orbiting units, planet health), captures that take time, and difficulty from maps rather than faster AI. Auralux's own pitch: "quick reflexes will get you nowhere".
+
+1. **Calm pace (default).** Growth about 5× slower, fleets 2.5 units a second, and a planet's own ships defend at double strength. Your planets lost per minute fell to 0–8, and every world is won following the coach at one move every 1, 2 or 3 seconds.
+2. **Teach it.** Venus's lesson: "Ships on a planet you own defend at double strength: 10 at home beat 19 attackers." The attack preview counts the edge ("37 vs 41 · not enough").
+3. **Fast stays as an option.** Skirmish has a Pace row (Calm / Fast); the opponent note shows how often it thinks at that pace.
+
+Training stars were re-set from the calm runs. Deferred to Iteration 4: two-step captures, combat in space, a send-all shortcut, difficulty from maps rather than bot speed.
+

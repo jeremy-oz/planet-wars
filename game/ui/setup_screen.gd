@@ -1,4 +1,4 @@
-## New game: opponents, bot, difficulty, map size and seed, with a live preview of the map.
+## New game: opponents, bot, pace, difficulty, map size and seed, with a live preview of the map.
 extends Control
 
 const Palette := preload("res://game/theme/palette.gd")
@@ -12,10 +12,9 @@ const BOT_NOTES := {
 	"nearest": "spreads to whatever is closest",
 	"greedy": "picks the best-value targets and snowballs",
 }
-const DIFFICULTY_NOTES := {
-	"relaxed": "thinks once a second",
-	"normal": "thinks twice a second",
-	"sharp": "thinks four times a second",
+const PACE_NOTES := {
+	"calm": "Calm: planets grow slowly and defend at double strength — plan your attacks",
+	"fast": "Fast: the arcade pace — planets grow quickly and change hands in seconds",
 }
 
 var main: Node
@@ -23,6 +22,7 @@ var config: Dictionary
 var _preview: MapView
 var _preview_holder: Node2D
 var _bot_note: Label
+var _pace_note: Label
 var _seed_edit: LineEdit
 var _time := 0.0
 
@@ -70,6 +70,9 @@ func _ready() -> void:
 	rows.append(_row("Opponent", UiKit.chips([["Random", "random"], ["Nearest", "nearest"], ["Greedy", "greedy"]], config["bot"], _set_option.bind("bot"))))
 	_bot_note = UiKit.label("", "CaptionLabel")
 	rows.append(_bot_note)
+	rows.append(_row("Pace", UiKit.chips([["Calm", "calm"], ["Fast", "fast"]], config.get("pace", Session.DEFAULT_PACE), _set_option.bind("pace"))))
+	_pace_note = UiKit.label("", "CaptionLabel")
+	rows.append(_pace_note)
 	rows.append(_row("Difficulty", UiKit.chips([["Relaxed", "relaxed"], ["Normal", "normal"], ["Sharp", "sharp"]], config["difficulty"], _set_option.bind("difficulty"))))
 	rows.append(_row("Map", UiKit.chips([["Small", "small"], ["Medium", "medium"], ["Large", "large"], ["Huge", "huge"]], config["map"], _set_option.bind("map"))))
 	var seed_row := HBoxContainer.new()
@@ -152,7 +155,10 @@ func _new_seed() -> void:
 
 
 func _refresh() -> void:
-	_bot_note.text = "%s · %s" % [BOT_NOTES.get(config["bot"], ""), DIFFICULTY_NOTES.get(config["difficulty"], "")]
+	var pace := str(config.get("pace", Session.DEFAULT_PACE))
+	var think: float = Session.THINK_EVERY.get(config["difficulty"], 2) * float(Session.PACES[pace]["tick_seconds"])
+	_bot_note.text = "%s · %s" % [BOT_NOTES.get(config["bot"], ""), "thinks every %.1f s" % think]
+	_pace_note.text = PACE_NOTES.get(pace, "")
 	var s := Session.new(config)
 	_preview.bind(s.world)
 	_fit_preview()
