@@ -122,10 +122,10 @@ font, ever. Both are variable fonts in `game/fonts/`. Minimum rendered size anyw
 - At most one accent at a time: the thing you can act on is Ice; everything else is Mist/Dusk.
 - Copy is lowercase-calm in body, uppercase-wide in headings and buttons, never shouty in both.
 - Empty states and errors use the same voice: short, kind, specific ("Lost the server. Rejoining…").
-- A click means one thing, decided only by what you click: your planet selects it (again
-  deselects, shift adds or removes), any other planet sends the selection there and clears it.
-  Reinforcing your own planet is a drag. Hovering an enemy or grey planet with a selection shows
-  the send preview; hovering your own shows none.
+- Clicks: any other planet sends the selection there and clears it. Your own planet: with one
+  planet selected it switches to it (again deselects, shift adds or removes); with several
+  selected it gathers them onto it. Dragging always sends. The send preview shows on hover exactly
+  when a click would send.
 
 ## 8. Mood board
 

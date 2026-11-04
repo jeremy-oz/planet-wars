@@ -360,16 +360,20 @@ func finish_drag() -> void:
 	_set_selection(PackedInt32Array())
 
 
-## One click on planet `id` (-1 = empty space). The meaning depends only on what was clicked,
-## never on what was selected before: your planet → select it (again → deselect; shift → add or
-## remove), any other planet → send the selection there and clear it. Owner, round 7: a click
-## that sometimes picked a source and sometimes sent ships cost time in a fight.
+## One click on planet `id` (-1 = empty space). Any other planet → send the selection there and
+## clear it. Your planet → select it (again → deselect; shift → add or remove), except while
+## several planets are selected: then it gathers the others onto it, which is how you protect a
+## planet in a hurry (double-click, then click it). Owner, round 7: a click that sometimes picked
+## a source and sometimes sent ships cost time; with one planet selected it now only switches.
 func click_planet(id: int, shift: bool) -> void:
 	if id < 0:
 		if not shift:
 			_set_selection(PackedInt32Array())
 		return
-	if world.planets[id].owner == HUMAN:
+	if world.planets[id].owner == HUMAN and not shift and gathers():
+		_send(selection, id)
+		_set_selection(PackedInt32Array())
+	elif world.planets[id].owner == HUMAN:
 		var s := PackedInt32Array([id])
 		if shift:
 			s = selection.duplicate()
@@ -385,6 +389,11 @@ func click_planet(id: int, shift: bool) -> void:
 	else:
 		_send(selection, id)
 		_set_selection(PackedInt32Array())
+
+
+## True while a click on your own planet sends ships to it (several planets are selected).
+func gathers() -> bool:
+	return selection.size() >= 2
 
 
 func _set_selection(s: PackedInt32Array) -> void:
@@ -665,8 +674,8 @@ func _paint_overlay(ci: CanvasItem) -> void:
 			var lp := _cursor + Vector2(_px(18.0), -_px(22.0))
 			ci.draw_string_outline(_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, int(_px(4.0)), Color(Palette.VOID, 0.7))
 			ci.draw_string(_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.ICE)
-	elif interactive and not selection.is_empty() and hover >= 0 and world.planets[hover].owner != HUMAN:
-		_draw_preview(ci, selection, hover)  # own planets select on click, so they get no send preview
+	elif interactive and not selection.is_empty() and hover >= 0 and (world.planets[hover].owner != HUMAN or gathers()):
+		_draw_preview(ci, selection, hover)  # with one planet selected, your own planets switch on click: no preview
 	if you_marker > 0.0:
 		var a := clampf(you_marker / 1.0, 0.0, 1.0)
 		var bob := 0.0 if reduced_motion else sin(_time * 4.0) * _px(4.0)

@@ -101,3 +101,4 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - A click's meaning depends only on what is clicked: your planet selects, any other planet sends — before, a click on your own planet sent ships to it whenever something else was selected, so the same click meant two things depending on state the player couldn't see in a hurry.
 - The selection clears after every send, click or drag — a selection left over from the last send turned the next "pick a source" click into a reinforcement.
 - Reinforcing your own planet is drag-only — it is the rarer move, and a drag shows its line and preview while you aim, so it cannot happen by accident.
+- With several planets selected, a click on your own planet gathers them onto it; with one, it switches — the owner protects planets often and needs double-click-then-click; the rings on every selected planet make the multi-select state visible, unlike the old leftover single selection.

@@ -1,7 +1,6 @@
-## Click rules (docs/STYLE_GUIDE.md §5): a click on your own planet always selects it, a click on
-## any other planet sends the selection there, and a send clears the selection. Nothing depends on
-## what was selected before, so the same click never means "pick a source" one time and "send
-## here" the next. Reinforcing your own planet is a drag.
+## Click rules (docs/STYLE_GUIDE.md §7): a click on any other planet sends the selection there, and
+## a send clears the selection. With one planet selected, a click on your own planet switches to
+## it; with several selected (rings on each), it gathers them onto it. Dragging always sends.
 extends "res://tests/case.gd"
 
 const MapView := preload("res://game/play/map_view.gd")
@@ -86,3 +85,16 @@ func test_dragging_onto_your_own_planet_reinforces_it() -> void:
 	assert_eq(sends.size(), 1)
 	assert_eq(sends[0][1], 1)
 	assert_true(view.selection.is_empty(), "a drag-send leaves nothing selected either")
+
+
+func test_with_several_selected_clicking_your_own_planet_gathers_them_onto_it() -> void:
+	view.select_all()
+	view.click_planet(1, false)
+	assert_eq(sends.size(), 1, "double-click then click: protect a planet in two moves")
+	assert_eq(sends[0][1], 1)
+	assert_true(view.selection.is_empty())
+	view.click_planet(0, false)
+	view.click_planet(2, true)
+	view.click_planet(1, false)
+	assert_eq(sends.size(), 2, "a box or shift selection gathers too")
+	assert_eq(sends[1][0], PackedInt32Array([0, 2]))

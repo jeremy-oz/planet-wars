@@ -18,9 +18,8 @@ Every planet you own has a shield (5 ships per level dot) that attackers must br
 one strong attack rather than several small ones. Skirmish
 also offers a Fast pace (the arcade feel).
 
-Drag from your blue planet to another to send ships. Or click: a click on your own planet
-always selects it, a click on any other planet sends there (and clears the selection); reinforce
-your own planets by dragging;
+Drag from your blue planet to another to send ships. Or click a planet of yours, then a target;
+with several selected (double-click or drag a box), clicking one of your own gathers them onto it;
 1–4 set how much to send; space pauses; Esc opens the menu. The dots around a planet are its
 level: more dots, more ships grown.
 

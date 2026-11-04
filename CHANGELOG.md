@@ -9,6 +9,8 @@ All notable changes to Planet Wars. Format follows [Keep a Changelog](https://ke
   deselect), and a click on an enemy or grey planet sends there. After a send nothing stays selected,
   so the next click on your planet picks a new source instead of sending ships to it. To reinforce
   your own planet, drag onto it; the coach's defence hint now says so.
+- With several planets selected (double-click selects all), clicking one of your own planets sends
+  the others to it: protecting a planet is double-click, then click. With one selected it switches.
 
 ### Changed — Iteration 2, round 5 (owner: planets flip too fast, it's a clicking race)
 - New default **Calm** pace: planets grow about 5× slower, fleets fly a bit slower, and every planet
