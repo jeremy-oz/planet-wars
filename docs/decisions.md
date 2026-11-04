@@ -97,3 +97,7 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - Harder worlds give you a head start (Jupiter 1.3×, Uranus 1.2×, Neptune 1.45×, Pluto 1.15×) instead of lopsided maps — a symmetric map against an equal bot is a coin flip, and Auralux's early levels lean the player's way; the maps stay fair to read.
 - The 3-star test takes the coach's best of one move every 1, 1.5 and 2 s — three-player worlds swing with how the two bots fight each other, so a single pace is a noisy measure of what a quick player can reach.
 
+### Iteration 2, round 7 (owner: "clicking a planet, sometimes it switches it to the source but sometimes it is the target")
+- A click's meaning depends only on what is clicked: your planet selects, any other planet sends — before, a click on your own planet sent ships to it whenever something else was selected, so the same click meant two things depending on state the player couldn't see in a hurry.
+- The selection clears after every send, click or drag — a selection left over from the last send turned the next "pick a source" click into a reinforcement.
+- Reinforcing your own planet is drag-only — it is the rarer move, and a drag shows its line and preview while you aim, so it cannot happen by accident.

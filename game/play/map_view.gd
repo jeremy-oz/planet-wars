@@ -334,13 +334,7 @@ func _sources_for(p: int) -> PackedInt32Array:
 
 func _release(shift: bool) -> void:
 	if _dragging:
-		var t := drag_target()
-		if t >= 0:
-			_send(_drag_sources, t)
-			selection = _drag_sources.duplicate()
-			selection_changed.emit()
-		_dragging = false
-		_drag_sources = PackedInt32Array()
+		finish_drag()
 		return
 	if _boxing:
 		_boxing = false
@@ -352,28 +346,52 @@ func _release(shift: bool) -> void:
 		selection = picked
 		selection_changed.emit()
 		return
-	var id := _press_planet
+	click_planet(_press_planet, shift)
+
+
+## Drop a drag: send to the planet under the cursor (your own too: that's how you reinforce).
+## The selection is cleared either way, so the next click starts fresh.
+func finish_drag() -> void:
+	var t := drag_target()
+	if t >= 0:
+		_send(_drag_sources, t)
+	_dragging = false
+	_drag_sources = PackedInt32Array()
+	_set_selection(PackedInt32Array())
+
+
+## One click on planet `id` (-1 = empty space). The meaning depends only on what was clicked,
+## never on what was selected before: your planet → select it (again → deselect; shift → add or
+## remove), any other planet → send the selection there and clear it. Owner, round 7: a click
+## that sometimes picked a source and sometimes sent ships cost time in a fight.
+func click_planet(id: int, shift: bool) -> void:
 	if id < 0:
-		if not shift and not selection.is_empty():
-			selection = PackedInt32Array()
-			selection_changed.emit()
+		if not shift:
+			_set_selection(PackedInt32Array())
 		return
-	var mine := world.planets[id].owner == HUMAN
-	if shift and mine:
-		var s := selection.duplicate()
-		if s.has(id):
-			s.remove_at(s.find(id))
-		else:
-			s.append(id)
-		selection = s
-		selection_changed.emit()
-	elif not selection.is_empty() and not selection.has(id):
-		_send(selection, id)
-	elif mine:
-		selection = PackedInt32Array([id])
-		selection_changed.emit()
-	else:
+	if world.planets[id].owner == HUMAN:
+		var s := PackedInt32Array([id])
+		if shift:
+			s = selection.duplicate()
+			if s.has(id):
+				s.remove_at(s.find(id))
+			else:
+				s.append(id)
+		elif selection == s:
+			s = PackedInt32Array()
+		_set_selection(s)
+	elif selection.is_empty():
 		_deny_at(id)
+	else:
+		_send(selection, id)
+		_set_selection(PackedInt32Array())
+
+
+func _set_selection(s: PackedInt32Array) -> void:
+	if s == selection:
+		return
+	selection = s
+	selection_changed.emit()
 
 
 func _send(sources: PackedInt32Array, target: int) -> void:
@@ -647,8 +665,8 @@ func _paint_overlay(ci: CanvasItem) -> void:
 			var lp := _cursor + Vector2(_px(18.0), -_px(22.0))
 			ci.draw_string_outline(_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, int(_px(4.0)), Color(Palette.VOID, 0.7))
 			ci.draw_string(_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.ICE)
-	elif interactive and not selection.is_empty() and hover >= 0 and not selection.has(hover):
-		_draw_preview(ci, selection, hover)
+	elif interactive and not selection.is_empty() and hover >= 0 and world.planets[hover].owner != HUMAN:
+		_draw_preview(ci, selection, hover)  # own planets select on click, so they get no send preview
 	if you_marker > 0.0:
 		var a := clampf(you_marker / 1.0, 0.0, 1.0)
 		var bob := 0.0 if reduced_motion else sin(_time * 4.0) * _px(4.0)

@@ -730,9 +730,9 @@ func _hint() -> String:
 		return "release to select every planet of yours inside the box"
 	var n := map_view.selection.size()
 	if n > 0:
-		return "%d selected  ·  click a target to send %d ships (%d%%)  ·  keys 1–4 change the share  ·  right-click cancels" % [n, map_view.estimate_ships, pct]
+		return "%d selected  ·  click an enemy or grey planet to send %d ships (%d%%)  ·  click your own to switch  ·  drag to reinforce" % [n, map_view.estimate_ships, pct]
 	if not _sent_once:
-		return "click one of your planets, then click a target  ·  or drag between them"
+		return "click one of your planets, then click a target  ·  or drag from yours to any planet"
 	return "click or drag from your planets  ·  double-click selects all  ·  space pauses  ·  scroll zooms"
 
 

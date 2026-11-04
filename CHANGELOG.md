@@ -4,6 +4,12 @@ All notable changes to Planet Wars. Format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Changed — Iteration 2, round 7 (owner: a click sometimes selected, sometimes sent)
+- Clicking is predictable: a click on your own planet always makes it the source (click it again to
+  deselect), and a click on an enemy or grey planet sends there. After a send nothing stays selected,
+  so the next click on your planet picks a new source instead of sending ships to it. To reinforce
+  your own planet, drag onto it; the coach's defence hint now says so.
+
 ### Changed — Iteration 2, round 5 (owner: planets flip too fast, it's a clicking race)
 - New default **Calm** pace: planets grow about 5× slower, fleets fly a bit slower, and every planet
   you own has a shield (5 ships per level dot) that attackers must break first. Battles take tens of

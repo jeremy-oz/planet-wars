@@ -155,7 +155,7 @@ func describe(a: Dictionary) -> String:
 			for f in world.fleets:
 				if f.destination == dst and f.owner != HUMAN and f.owner != 0:
 					incoming += f.ships
-			return "%s is under attack: %d ships incoming. Send %d from %s to hold it." % [names[dst], incoming, a["ships"], from]
+			return "%s is under attack: %d ships incoming. Drag %d from %s onto it to hold it." % [names[dst], incoming, a["ships"], from]
 		"strike":
 			return "%s has only %d ships. Strike it from %s before it grows.%s" % [names[dst], t.ships, from, together]
 		_:
