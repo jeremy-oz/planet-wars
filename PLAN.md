@@ -10,7 +10,7 @@ A Galcon / Auralux / Eufloria-style game: planets grow ships, you send fleets, y
 
 ## Ground rules (paste these into every Claude Code session)
 
-- Repo: `planet-wars/`. One iteration = one branch + one PR. Don't start the next iteration until the current one's **Done when** list is green.
+- Repo: `planet-wars/`. All work happens on `main` (owner, 2026-11-10: branches were hard to keep track of); each iteration is a run of commits whose messages name it. Don't start the next iteration until the current one's **Done when** list is green.
 - Stack: **Godot 4.x (GDScript)** for everything in the game and the dedicated server. **Python (`uv`)** only for build/CI/dev tooling. No other languages unless this plan says so.
 - The **simulation is pure and deterministic**: no rendering, no randomness without an explicit seed, same inputs → same outputs. It lives in `sim/` and is tested headlessly with `godot --headless -s`. This is what makes online play desync-free later, so it is non-negotiable.
 - Tests before features. Every iteration adds tests; CI runs them.
@@ -27,7 +27,7 @@ A Galcon / Auralux / Eufloria-style game: planets grow ships, you send fleets, y
 3. **Agent review (when appropriate).** Spawn one or more reviewer agents with *no memory of building it*, given only the screenshots, recording, and the question list. Use them for: heuristic/usability pass (Nielsen's ten), accessibility pass (contrast, target sizes, colour-blind check), and a "first-time player" walkthrough from the recording. Skip when the iteration has no visible UI change.
 4. **Playtester survey (friends), from Iteration 3.** Same survey, sent after an online session. Optional in 3, expected from 4.
 5. **Synthesise.** `docs/ui-reviews/iter-N/findings.md`: scores vs previous iteration, top three issues, what will be fixed now, what is deferred and why.
-6. **Fix the top three**, re-capture, and only then open the PR.
+6. **Fix the top three**, re-capture, and only then call the iteration done.
 
 Scores must not drop on any question between iterations without a written reason.
 

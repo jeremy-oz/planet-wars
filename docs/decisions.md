@@ -63,6 +63,9 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - Star pars are multiples of a Greedy bot's time in your seat (3★ ≈ 3.5×+10 s, 2★ ≈ 6×+20 s) — a bot reacts every tick, so its time is a floor; a test keeps every level winnable by it inside the 3-star par. *(Replaced in round 3: pars now come from human-paced play.)*
 - A level's enemy is keyed by seat, not planet id — hand-made maps list the enemy home last.
 
+### Workflow (owner, 2026-11-10)
+- All work is committed to `main`; the iteration branches were merged and deleted — the owner found several branches hard to follow, and as the only reviewer the branch gate added nothing a commit message can't say.
+
 ### Iteration 2, round 3 (owner: "stuck at Mars")
 
 - Training is tuned against a person, not a bot: a test follows the coach's advice with one move every 2 s and must win every world (normal and easier retry) — a pace check showed that play lost every world from Venus on; the old fairness test used a bot reacting every tick.

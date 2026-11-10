@@ -8,11 +8,10 @@ Built for human players online, self-hosted, no telemetry. See `PLAN.md` for the
 ### Get it running
 
 1. Install [Godot 4.7](https://godotengine.org/download) (free; the standard version, not .NET).
-2. Get the code and switch to the latest playable branch:
+2. Get the code (later, `git pull` gets the newest version):
    ```
    git clone https://github.com/jeremy-oz/planet-wars
    cd planet-wars
-   git checkout iter-2-single-player
    ```
 3. Run it: `godot --path .` from the folder (if `godot` is on your `PATH`), or open Godot, choose
    **Import**, pick `project.godot`, then press **Play** (F5). The first launch takes a few seconds
