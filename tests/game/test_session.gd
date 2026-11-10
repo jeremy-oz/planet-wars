@@ -148,3 +148,16 @@ func test_thinking_ahead_gives_identical_games() -> void:
 			s.step()
 		hashes.append(s.world.state_hash())
 	assert_eq(hashes[0], hashes[1], "pre-computed bot orders must not change the game")
+
+
+func test_planets_have_room_and_a_full_one_grows_when_fed() -> void:
+	var s := Session.new({"map_text": "# players: 2\nP 5 5 1 60 2\nP 7 5 1 40 1\nP 25 5 2 10 1\n"})
+	assert_eq(s.world.capacity_of(s.world.planets[0]), Session.CAP_PER_LEVEL * 2, "calm pace caps planets")
+	s.queue_send(PackedInt32Array([1]), 0, 1.0)  # 40 onto a full level-2 planet: 30 buys level 3
+	var grew := false
+	for i in range(10):
+		for e in s.step():
+			if e["type"] == "grow" and int(e["planet"]) == 0:
+				grew = true
+	assert_true(grew, "a grow event for the presentation")
+	assert_eq(s.world.planets[0].growth, 3)

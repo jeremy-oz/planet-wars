@@ -1,12 +1,15 @@
 ## Captures the best-value planet it can afford, accounting for ships already on the way.
 ##
-## Value = growth per ship spent per tick of travel. Enemy targets price in their growth during the
+## Value = growth per ship spent per tick of travel; with growing planets on, landing ships on a
+## full planet of its own to buy a level competes on the same terms. Enemy targets price in their growth during the
 ## trip. Each owned planet keeps a small reserve and sends exactly what a capture needs, so it
 ## snowballs instead of trickling. Deterministic; needs no RNG.
 extends "res://sim/bots/bot.gd"
 
 const RESERVE_PER_GROWTH := 2
 const RESERVE_BASE := 3
+## A level bought on my own planet is worth this much growth (a capture of level g is worth g + 1).
+var grow_value := 2.0
 
 
 func bot_name() -> String:
@@ -46,6 +49,18 @@ func decide(world: World, player: int) -> Array:
 			if needed > surplus:
 				continue
 			var score := float(t.growth + 1) / (float(needed) * float(tt))
+			if score > best_score:
+				best_score = score
+				best = t
+				best_needed = needed
+		# growing one of my own full planets: one more level, valued like a level-1 capture
+		for t in owned(world, player):
+			if t.id == src.id or not world.can_grow(t) or threat.has(t.id):
+				continue
+			var needed: int = world.ships_to_grow(t) - incoming.get(t.id, 0)
+			if needed < 1 or needed > surplus:
+				continue
+			var score := grow_value / (float(needed) * float(world.travel_time(src.id, t.id)))
 			if score > best_score:
 				best_score = score
 				best = t

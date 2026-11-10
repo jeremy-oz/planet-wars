@@ -5,7 +5,7 @@
 ##   const World := preload("res://sim/world.gd")
 extends RefCounted
 
-const SIM_VERSION := "1.0"
+const SIM_VERSION := "1.1"
 const DEFAULT_MAX_TICKS := 1000
 
 ## Planet record. `owner` 0 is neutral, 1..N are players.
@@ -15,6 +15,8 @@ class Planet:
 	var owner: int
 	var ships: int
 	var growth: int
+	## Ships fed toward the next level (SPEC §5); back to 0 when the planet changes hands.
+	var progress: int = 0
 
 	func _init(p_id: int, p_position: Vector2, p_owner: int, p_ships: int, p_growth: int) -> void:
 		id = p_id
@@ -67,6 +69,14 @@ var growth_every: int = 1
 ## every fight. The shield takes the first hits and is back next tick; it is not state.
 ## Neutral planets have none. 0 = the 2010 rule.
 var shield: int = 0
+## Planet capacity (SPEC §4): an owned planet stops growing at `cap_per_level` ships per growth
+## level (a level-0 planet counts as 1). Fleets may still land beyond it. 0 = no cap.
+var cap_per_level: int = 0
+## Growing planets (SPEC §5): ships you land on your own planet beyond its capacity feed its
+## growth; `upgrade_cost_per_level * (growth + 1)` of them buy the next level, up to `max_growth`.
+## 0 = planets never grow.
+var max_growth: int = 0
+var upgrade_cost_per_level: int = 10
 var seed: int = 0
 ## Seeded RNG for anything in the sim that needs randomness (currently only map generation).
 var rng := RandomNumberGenerator.new()
@@ -105,11 +115,43 @@ func shield_of(planet: Planet) -> int:
 
 
 ## Ships a fleet arriving in `ticks` must carry to take `planet` (ignoring other fleets): the
-## garrison after growth, plus its shield, plus one.
+## garrison after growth (up to its capacity), plus its shield, plus one.
 func ships_to_take(planet: int, ticks: int) -> int:
 	var p := planets[planet]
-	var later := p.ships + (p.growth * growth_ticks(ticks) if p.owner != 0 else 0)
-	return later + shield_of(p) + 1
+	return garrison_after(p, ticks) + shield_of(p) + 1
+
+
+## `planet`'s ships after `ticks` ticks of growth, stopping at its capacity.
+func garrison_after(planet: Planet, ticks: int) -> int:
+	if planet.owner == 0:
+		return planet.ships
+	var grown := planet.ships + planet.growth * growth_ticks(ticks)
+	return mini(grown, maxi(planet.ships, capacity_of(planet)))
+
+
+## Where `planet` stops growing: `cap_per_level` per growth level (a level-0 planet counts as 1).
+func capacity_of(planet: Planet) -> int:
+	if cap_per_level <= 0:
+		return 1 << 30
+	return cap_per_level * maxi(planet.growth, 1)
+
+
+## Ships it costs to take `planet` from its level to the next.
+func level_cost(planet: Planet) -> int:
+	return upgrade_cost_per_level * (planet.growth + 1)
+
+
+## True while landing ships on `planet` can make it grow.
+func can_grow(planet: Planet) -> bool:
+	return cap_per_level > 0 and planet.growth < max_growth
+
+
+## Ships its owner must land on `planet` to buy the next level: the room left before it is full,
+## plus what the level still costs. -1 when the planet cannot grow.
+func ships_to_grow(planet: Planet) -> int:
+	if not can_grow(planet):
+		return -1
+	return maxi(capacity_of(planet) - planet.ships, 0) + level_cost(planet) - planet.progress
 
 
 ## How many growth steps happen in the next `ticks` ticks (this tick included). With
@@ -184,7 +226,9 @@ func tick(orders: Array = []) -> void:
 	if tick_count % maxi(growth_every, 1) == 0:
 		for p in planets:
 			if p.owner != 0:
-				p.ships += p.growth
+				var cap := capacity_of(p)
+				if p.ships < cap:
+					p.ships = mini(p.ships + p.growth, cap)
 	var still_flying: Array[Fleet] = []
 	var arrivals: Dictionary = {}  # destination -> Array[Fleet]
 	for f in fleets:
@@ -213,6 +257,8 @@ func _resolve(planet: Planet, arriving: Array) -> void:
 		force[f.owner] = force.get(f.owner, 0) + f.ships
 	if force.size() == 1:
 		planet.ships = force[home] - guard  # reinforcement: no fight
+		if home != 0:
+			_feed_growth(planet, planet_before(planet, arriving))
 		return
 	var owners := force.keys()
 	owners.sort()
@@ -233,7 +279,36 @@ func _resolve(planet: Planet, arriving: Array) -> void:
 	planet.ships = top - second
 	if top_owner == home and guard > 0:
 		planet.ships = mini(top - guard, top - second)  # the shield took the first hits
+	if top_owner != home:
+		planet.progress = 0
 	planet.owner = top_owner
+
+
+## The garrison before `arriving` landed (they are all the owner's: a reinforcement).
+func planet_before(planet: Planet, arriving: Array) -> int:
+	var n := planet.ships
+	for f: Fleet in arriving:
+		n -= f.ships
+	return n
+
+
+## SPEC §5 growing planets: of the `landed` ships just merged into `planet`, those beyond its
+## capacity feed its growth; each full level cost buys a level (which also raises the capacity).
+func _feed_growth(planet: Planet, before: int) -> void:
+	if not can_grow(planet):
+		return
+	var landed := planet.ships - before
+	var extra := mini(landed, planet.ships - capacity_of(planet))
+	if extra <= 0:
+		return
+	planet.ships -= extra
+	planet.progress += extra
+	while can_grow(planet) and planet.progress >= level_cost(planet):
+		planet.progress -= level_cost(planet)
+		planet.growth += 1
+	if not can_grow(planet):
+		planet.ships += planet.progress  # at the top level the change just lands
+		planet.progress = 0
 
 
 # --- queries ------------------------------------------------------------------------------
@@ -330,6 +405,8 @@ func state_hash() -> String:
 		h = _fnv(h, p.id)
 		h = _fnv(h, p.owner)
 		h = _fnv(h, p.ships)
+		h = _fnv(h, p.growth)
+		h = _fnv(h, p.progress)
 	h = _fnv(h, fleets.size())
 	for f in fleets:
 		h = _fnv(h, f.owner)

@@ -162,6 +162,13 @@ func _react(events: Array) -> void:
 	var whooshes := 0
 	for e: Dictionary in events:
 		match str(e["type"]):
+			"grow":
+				# a level gained: a rising pair of chimes for yours, a quiet low one for theirs
+				if audio and int(e["owner"]) == HUMAN:
+					audio.chime(5 - int(e["growth"]), -4.0)
+					audio.chime(4 - int(e["growth"]), -6.0)
+				elif audio:
+					audio.chime(10 - int(e["growth"]), -16.0)
 			"launch":
 				if int(e["owner"]) != HUMAN and whooshes < 2 and audio:
 					audio.play("whoosh", -16.0, _rng.randf_range(0.85, 1.1))

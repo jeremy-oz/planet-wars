@@ -39,8 +39,9 @@ static var LEVELS: Array[Dictionary] = [
 		"lesson": [
 			{"text": "The dots around {big} show its level. Five dots grow five times faster than one, but it costs more to take.", "wait": "ok", "focus": ["big"]},
 			{"text": "Start cheap: take {cheap} first, then save up for the big one.", "wait": "send", "arrow": ["home", "cheap"]},
+			{"text": "Each dot also holds 30 ships. A full planet stops growing and its number turns gold. Drag more ships onto a full planet of yours and the extra makes it grow a dot: watch the gold ring fill.", "wait": "ok", "focus": ["home"]},
 		],
-		"brief": "More dots around a planet = higher level = more ships grown. Big ones cost more to take.",
+		"brief": "More dots = more ships grown and more room. Feed a full planet of yours and it grows a dot.",
 		"bots": ["random"], "difficulty": "relaxed", "seed": 2, "par": [115, 90],
 		"map_text": Formations.build(2, [[-10, 0, 30, 3, true], [-6, -4, 6, 1], [-6, 4, 6, 1]], [[0, 0, 30, 5]]),
 	},
@@ -138,6 +139,9 @@ static func config(i: int, assist: bool = false) -> Dictionary:
 		"opponents": lv["bots"].size(),
 		"difficulty": EASIER.get(lv["difficulty"], lv["difficulty"]) if assist else lv["difficulty"],
 		"bot_moves": BOT_MOVES,
+		# Training commanders never grow their planets: growing is your edge to learn, and bots
+		# that grow turned the late worlds into stand-offs (sweep, round 8).
+		"bot_grow": 0.0,
 		"backdrop": ["pillars-webb", "carina", "cosmic-cliffs", "pillars-hubble", "whirlpool"][i % 5],
 		"homes": {2: lv["body"]},
 	}

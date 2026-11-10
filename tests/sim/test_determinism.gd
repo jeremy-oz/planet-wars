@@ -60,4 +60,4 @@ func test_hash_is_stable_across_runs() -> void:
 	assert_eq(result["hash"], PINNED_HASH, "sim output changed; bump SIM_VERSION and re-pin")
 
 
-const PINNED_HASH := "64d0389b04f370ba"
+const PINNED_HASH := "350db5cffe299bdf"

@@ -48,6 +48,9 @@ shows the fight before you commit ("40 vs 31 · takes it").
 
 - **Levels.** The dots around a planet are its level: more dots, more ships made, but it costs
   more to take.
+- **Room and growing.** Each level dot holds 30 ships; a full planet stops growing and its number
+  turns gold. Drag more ships onto a full planet of yours and the extra fills a gold ring; when it
+  closes, the planet gains a dot (bigger, makes more, holds more). Up to five dots.
 - **Shields.** Every planet you own has a shield of 5 ships per level dot that attackers must break
   first, and it is whole again a moment later. One big attack beats several small ones.
 - **Fleets** fly in a straight line and can't be redirected; a bigger fleet looks bigger.

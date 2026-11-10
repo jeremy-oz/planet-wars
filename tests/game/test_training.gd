@@ -254,3 +254,11 @@ func test_level_enemy_holds_the_named_world() -> void:
 				assert_eq(layers[p.id], Bodies.layer("earth"), "you always launch from Earth")
 			else:
 				assert_false(layers[p.id] in [Bodies.layer("earth"), Bodies.layer(Levels.LEVELS[i]["body"])], "%s: no neutral shares a home's name" % Levels.LEVELS[i]["id"])
+
+
+func test_training_commanders_never_grow_their_planets() -> void:
+	for i in range(Levels.count()):
+		var s := Session.new(Levels.config(i))
+		for b in s.bots.values():
+			if "grow_value" in b:
+				assert_eq(b.grow_value, 0.0, "%s: growing is the player's edge" % Levels.LEVELS[i]["id"])

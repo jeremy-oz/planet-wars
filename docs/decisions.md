@@ -105,3 +105,14 @@ One line per decision: what — why. Newest at the bottom. Reversals get a new l
 - The selection clears after every send, click or drag — a selection left over from the last send turned the next "pick a source" click into a reinforcement.
 - Reinforcing your own planet is drag-only — it is the rarer move, and a drag shows its line and preview while you aim, so it cannot happen by accident.
 - With several planets selected, a click on your own planet gathers them onto it; with one, it switches — the owner protects planets often and needs double-click-then-click; the rings on every selected planet make the multi-select state visible, unlike the old leftover single selection.
+
+### Round 8 (owner: "how are ships generated?" → a cap, and planets that grow)
+- Planets hold 30 ships per growth level and stop growing when full — with no cap a small early lead compounds forever, the snowball the owner kept losing to; Mushroom Wars caps buildings the same way.
+- Growing is Auralux's overflow, chosen by the owner over an upgrade button: ships landed on your own full planet feed a progress ring, 10 × the next level buys it, up to 5 — no new control to learn, and the attack preview says when a drop will grow the planet, so it is visible before it happens.
+- Only landed ships beyond capacity feed growth, and only from a reinforcement — production stopping at the cap keeps idle planets from upgrading themselves, which would reward turtling.
+- Cap 30, not 20 — at 20 Jupiter's easier retry was lost at a person's pace; 30 wins every world, normal and easier.
+- Training commanders never grow (`bot_grow` 0); Skirmish Greedy bots do (`grow_value` 2) — bots that grew turned Pluto and Uranus into 15-minute stand-offs, and growing is the player's edge to learn.
+- The coach values a level at 3 (a level-1 capture is 2) — sweeps showed the coach's losing runs were the ones where it grew 0–2 levels; at 3 it grows and wins.
+- `growth` and `progress` join `state_hash()`; SIM_VERSION 1.1 — growth is now state that changes during a match.
+- Known: Greedy-vs-Greedy skirmishes on the calm pace rarely finish within 20 minutes, with or without the cap — the shield makes bots too cautious to close; a human ends the match, so it waits for the bot work in Iteration 4.
+

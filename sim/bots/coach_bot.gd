@@ -5,6 +5,7 @@
 ##             get there in time.
 ##   "strike"  an enemy planet is weak enough to take now (its growth during the trip priced in).
 ##   "expand"  the best-value neutral you can afford.
+##   "grow"    land ships on a full planet of yours so it reaches the next level (growing planets).
 ## Every source keeps a reserve against enemy planets close enough to hit it, so following the
 ## advice never leaves a front-line planet empty. Deterministic; needs no RNG.
 ## tests/game/test_training.gd plays every training level by following this advice at a human pace.
@@ -15,6 +16,7 @@ const RESERVE_BASE := 3
 var near_ticks := 12  ## an enemy planet this close (3 s at 1×) threatens a source
 var exposure := 0.5  ## ...and the source keeps this share of that enemy's ships at home
 var strike_bonus := 2.0  ## an enemy planet is worth this many neutrals of the same size (it stops their growth)
+var grow_value := 3.0  ## one level on your own planet: more ships, more room, a bigger shield, and no fight
 
 
 func bot_name() -> String:
@@ -37,7 +39,7 @@ func decide(world: World, player: int) -> Array:
 	return orders
 
 
-## {kind: "defend"|"strike"|"expand", sources: PackedInt32Array, destination, ships} or {} when there is nothing
+## {kind: "defend"|"strike"|"expand"|"grow", sources: PackedInt32Array, destination, ships} or {} when there is nothing
 ## worth doing yet (save up).
 func advise(world: World, player: int) -> Dictionary:
 	var mine := owned(world, player)
@@ -63,7 +65,7 @@ func advise(world: World, player: int) -> Dictionary:
 		if not threat.has(m.id):
 			continue
 		var eta: int = first_eta[m.id]
-		var short: int = int(threat[m.id]) - (m.ships + m.growth * world.growth_ticks(eta) + world.shield_of(m)) - int(incoming.get(m.id, 0)) + 1
+		var short: int = int(threat[m.id]) - (world.garrison_after(m, eta) + world.shield_of(m)) - int(incoming.get(m.id, 0)) + 1
 		if short < 1:
 			continue
 		for h in mine:
@@ -79,11 +81,12 @@ func advise(world: World, player: int) -> Dictionary:
 	# 2. the best-value capture: from one planet, or from the nearest two or three together
 	var best_score := 0.0
 	for t in world.planets:
-		if t.owner == player:
+		var grow := t.owner == player
+		if grow and (not world.can_grow(t) or threat.has(t.id)):
 			continue
 		var near: Array = []
 		for src in mine:
-			if int(spare[src.id]) >= 1:
+			if src.id != t.id and int(spare[src.id]) >= 1:
 				near.append(src)
 		near.sort_custom(func(a: World.Planet, b: World.Planet) -> bool: return world.travel_time(a.id, t.id) < world.travel_time(b.id, t.id))
 		var group: Array = []
@@ -92,18 +95,25 @@ func advise(world: World, player: int) -> Dictionary:
 			group.append(src.id)
 			pooled += int(spare[src.id])
 			var tt := world.travel_time(src.id, t.id)  # the slowest of the group so far
-			var needed: int = world.ships_to_take(t.id, tt) - int(incoming.get(t.id, 0))
-			if int(incoming.get(t.id, 0)) > 0:
-				needed += world.shield_of(t)  # a separate arrival meets the shield again
+			var needed: int
+			var gain: float
+			if grow:
+				needed = world.ships_to_grow(t) - int(incoming.get(t.id, 0))
+				gain = grow_value
+			else:
+				needed = world.ships_to_take(t.id, tt) - int(incoming.get(t.id, 0))
+				if int(incoming.get(t.id, 0)) > 0:
+					needed += world.shield_of(t)  # a separate arrival meets the shield again
+				# a strike also removes the enemy's growth: worth twice a neutral of the same size
+				gain = float(t.growth + 1) * (strike_bonus if t.owner != 0 else 1.0)
 			if needed < 1 or needed > pooled:
 				continue
-			# a strike also removes the enemy's growth: worth twice a neutral of the same size;
 			# every extra planet in a group is another click, so groups pay a small toll
-			var gain := float(t.growth + 1) * (strike_bonus if t.owner != 0 else 1.0)
 			var score := gain / (float(needed) * float(tt)) / (1.0 + 0.25 * (group.size() - 1))
 			if score > best_score:
 				best_score = score
-				best = {"kind": "strike" if t.owner != 0 else "expand", "sources": PackedInt32Array(group), "destination": t.id, "ships": needed}
+				var kind := "grow" if grow else ("strike" if t.owner != 0 else "expand")
+				best = {"kind": kind, "sources": PackedInt32Array(group), "destination": t.id, "ships": needed}
 			break
 	return best
 

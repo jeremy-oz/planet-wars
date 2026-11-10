@@ -101,7 +101,7 @@ func on_action(kind: String, data: Dictionary = {}) -> void:
 
 
 ## Called once per sim tick with game time. Returns the live hint to show ({} for none):
-## {kind: "defend"|"expand"|"strike", text, sources, destination}.
+## {kind: "defend"|"expand"|"strike"|"grow", text, sources, destination}.
 func update(seconds: float) -> Dictionary:
 	_seconds = seconds
 	if holding():
@@ -156,6 +156,8 @@ func describe(a: Dictionary) -> String:
 				if f.destination == dst and f.owner != HUMAN and f.owner != 0:
 					incoming += f.ships
 			return "%s is under attack: %d ships incoming. Drag %d from %s onto it to hold it." % [names[dst], incoming, a["ships"], from]
+		"grow":
+			return "%s is nearly full and has stopped growing. Drag %d ships from %s onto it: the extra makes it grow a level, so it makes more and holds more.%s" % [names[dst], a["ships"], from, together]
 		"strike":
 			return "%s has only %d ships. Strike it from %s before it grows.%s" % [names[dst], t.ships, from, together]
 		_:

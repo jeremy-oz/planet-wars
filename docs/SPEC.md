@@ -16,7 +16,8 @@ a seed and a sequence of order lists, it produces exactly the same state on ever
 | `position` | Vector2 (float) | map units; used only for distances |
 | `owner` | int | `0` = neutral, `1..N` = player |
 | `ships` | int | ≥ 0 |
-| `growth` | int | ships added per tick while owned by a player; 0–5 on classic maps |
+| `growth` | int | ships added per tick while owned by a player; 0–5 on classic maps; its level |
+| `progress` | int | ships fed toward the next level (growing planets, §5); 0 when off |
 
 ### Fleet
 | Field | Type | Notes |
@@ -71,7 +72,9 @@ Exactly this sequence, nothing interleaved:
 1. **Apply orders** for every player (section 2). Order of players: ascending player id.
 2. **Growth.** On ticks where `tick_count % growth_every == 0` (default `growth_every` = 1, every tick),
    every planet with `owner != 0` gains `growth` ships. Neutral planets do not grow. `growth_every`
-   is a match setting (the pace), not part of the map.
+   is a match setting (the pace), not part of the map. **Capacity** (`cap_per_level`, a match
+   setting, default 0 = none): a planet stops growing at `cap_per_level * max(growth, 1)` ships;
+   growth tops it up to that and never lowers a planet already above it.
 3. **Advance fleets.** Every fleet's `remaining -= 1`.
 4. **Resolve arrivals.** For every planet with at least one fleet at `remaining == 0`, resolve combat
    (section 5). Arrived fleets are removed.
@@ -101,7 +104,15 @@ at `ships + shield * growth` when the owner is a player; neutral planets have no
 holds, the shield took the first hits: the planet keeps `min(ships + friendly arrivals, top - second)`.
 The shield is not state; it is whole again next tick, so separate arrivals each meet it.
 Reinforcement with no enemy present is a plain merge. `ships_to_take(planet, ticks)` gives what one
-attacking fleet needs: the garrison after growth, plus the shield, plus one.
+attacking fleet needs: the garrison after growth (up to capacity), plus the shield, plus one.
+
+**Growing planets (`max_growth`, a match setting, default 0 = off; needs a capacity).** After a
+reinforcement merge in step 2, the landed ships that put the planet above its capacity leave the
+garrison and go into `progress`. While `progress >= upgrade_cost_per_level * (growth + 1)` and
+`growth < max_growth`, that cost is paid and `growth` rises by one (raising capacity and shield).
+At `max_growth` any leftover progress returns to the garrison. A battle never feeds progress; a
+change of owner resets it to 0 (the level stays). `ships_to_grow(planet)` gives the ships its owner
+must land to buy the next level: the room left plus the rest of the cost.
 
 This is the 2010 rule set exactly (with `shield = 0`). The tie rule is the one most often got wrong; the test suite covers it.
 
@@ -141,7 +152,7 @@ with 100 ships and growth 5, planets at least 2 units apart, all other planets n
 
 ## 9. Determinism contract
 
-- `state_hash() -> String`: a hash over every planet `(id, owner, ships)` and every fleet
+- `state_hash() -> String`: a hash over every planet `(id, owner, ships, growth, progress)` and every fleet
   `(owner, ships, source, destination, trip_length, remaining)` in canonical order, plus `tick_count`.
   Implemented with integer arithmetic only (FNV-1a over the field bytes), never over floats.
 - Replaying the same map + seed + per-tick order lists on any platform yields the same

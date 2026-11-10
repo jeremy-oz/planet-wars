@@ -4,6 +4,15 @@ All notable changes to Planet Wars. Format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Added — round 8 (owner: "bigger planets can host more ships", "planets that can grow")
+- Planets have room: 30 ships per level dot. A full planet stops growing and its number turns gold,
+  so ships sitting idle are wasted and a lead can't snowball without limit.
+- Planets grow: land ships on a full planet of yours (drag onto it) and the extra fills a gold ring;
+  when it closes, the planet gains a level dot (10 × the new level in ships), gets bigger, makes
+  more, holds more and has a stronger shield. Up to five dots. The attack preview shows the growth.
+- The coach suggests growing when it's the best move, and Mercury's lesson teaches it. Training
+  commanders never grow their planets: that edge is yours. Skirmish bots do.
+
 ### Changed — Iteration 2, round 7 (owner: a click sometimes selected, sometimes sent)
 - Clicking is predictable: a click on your own planet always makes it the source (click it again to
   deselect), and a click on an enemy or grey planet sends there. After a send nothing stays selected,

@@ -21,6 +21,8 @@ const MAX_FX := 160
 const NEUTRAL_TEXT := Color("#C9D0DE")
 const WIN_COLOR := Color("#7FE3B5")
 const LOSE_COLOR := Color("#FF8A7A")
+## A full planet's count, and its growth arc (STYLE_GUIDE §4): it has stopped growing.
+const FULL_COLOR := Color("#FFD27A")
 const World := preload("res://sim/world.gd")
 
 const UNIT := 40.0
@@ -78,6 +80,7 @@ var _layers: Dictionary = {}
 var _fx_rng := RandomNumberGenerator.new()
 var _fleets: FleetRenderer
 var _planets: PlanetRenderer
+var _nearest: PackedFloat32Array = []  # distance to the closest other planet, map units
 
 
 func _ready() -> void:
@@ -127,12 +130,14 @@ func bind(p_world: World, homes: Dictionary = {}) -> void:
 	_deny.resize(n)
 	_color.resize(n)
 	_radius.resize(n)
+	_nearest.resize(n)
 	for i in range(n):
 		var nearest := INF
 		for j in range(n):
 			if j != i:
 				nearest = minf(nearest, world.planets[i].position.distance_to(world.planets[j].position))
-		_radius[i] = minf(radius_for(world.planets[i].growth), nearest * UNIT * 0.36)
+		_nearest[i] = nearest
+		_fit_radius(i)
 		_shown[i] = world.planets[i].ships
 		_shown_owner[i] = world.planets[i].owner
 		_flip[i] = 10.0
@@ -165,6 +170,11 @@ func planet_pos(id: int) -> Vector2:
 
 
 ## Growth-scaled radius, capped so two neighbours never touch (maps allow planets 2 units apart).
+## Called again when a planet grows a level.
+func _fit_radius(i: int) -> void:
+	_radius[i] = minf(radius_for(world.planets[i].growth), _nearest[i] * UNIT * 0.36)
+
+
 func planet_radius(id: int) -> float:
 	return _radius[id] if id < _radius.size() else radius_for(world.planets[id].growth)
 
@@ -461,6 +471,13 @@ func on_events(events: Array) -> void:
 				_squash[src] = 0.0
 				if not crowded or int(e["owner"]) == HUMAN:
 					_add_burst(src, int(e["destination"]), Palette.player_color(int(e["owner"])), int(e["ships"]))
+			"grow":
+				var gid: int = e["planet"]
+				_fit_radius(gid)
+				_pop[gid] = 0.0
+				var gc := Palette.player_color(int(e["owner"]))
+				_fx.append({"type": "ripple", "pos": planet_pos(gid), "r": planet_radius(gid), "t": 0.0, "dur": 0.7, "color": FULL_COLOR})
+				_fx.append({"type": "ripple", "pos": planet_pos(gid), "r": planet_radius(gid), "t": -0.15, "dur": 0.7, "color": gc})
 			"arrival":
 				var id: int = e["planet"]
 				var pos := planet_pos(id)
@@ -613,6 +630,12 @@ func _draw_preview(ci: CanvasItem, sources: PackedInt32Array, target: int) -> vo
 	var col := Palette.ICE
 	if t.owner == HUMAN:
 		text = "+%d reinforce" % estimate_ships
+		var room := maxi(world.capacity_of(t) - t.ships, 0)
+		if world.can_grow(t) and estimate_ships > room:
+			var feed := estimate_ships - room + t.progress
+			var cost := world.level_cost(t)
+			text = "+%d  ·  grows to level %d" % [estimate_ships, t.growth + 1] if feed >= cost else "+%d  ·  growth %d/%d" % [estimate_ships, feed, cost]
+			col = FULL_COLOR
 	else:
 		var trip := 1
 		for s in sources:
@@ -648,7 +671,15 @@ func _paint_overlay(ci: CanvasItem) -> void:
 			base.x += sin(_deny[i] * 60.0) * _px(3.0) * (1.0 - _deny[i] / 0.35)
 		var outline := maxi(int(_px(4.0)), 3)
 		ci.draw_string_outline(_font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, outline, Color(Palette.VOID, 0.7))
-		ci.draw_string(_font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.ICE if _shown_owner[i] != 0 else NEUTRAL_TEXT)
+		var tc := NEUTRAL_TEXT
+		if _shown_owner[i] != 0:
+			tc = FULL_COLOR if p.owner != 0 and p.ships >= world.capacity_of(p) else Palette.ICE
+		ci.draw_string(_font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, tc)
+		if p.progress > 0 and p.owner != 0 and world.can_grow(p):
+			# progress toward the next level: a gold arc from the top, clockwise
+			var f := clampf(float(p.progress) / float(world.level_cost(p)), 0.0, 1.0)
+			var ar := r + maxf(3.0 / screen_scale, 3.0)
+			ci.draw_arc(p.position * UNIT, ar, -PI * 0.5, -PI * 0.5 + TAU * f, maxi(8, int(48 * f)), Color(FULL_COLOR, 0.85), _px(2.5), true)
 	if _dragging:
 		var target := drag_target()
 		var step := _px(16.0, 12.0)

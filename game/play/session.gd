@@ -22,9 +22,15 @@ const MAP_SIZES := {"small": 12, "medium": 24, "large": 48, "huge": 200}
 ## (owner play-test, round 5): about 4 ships/s, fleets at 2.5 units/s, and every planet you own is
 ## shielded, so a thinly held planet is not a free snack and plans beat fast clicks.
 const PACES := {
-	"calm": {"tick_seconds": 0.4, "growth_every": 3, "shield": 5},
-	"fast": {"tick_seconds": 0.25, "growth_every": 1, "shield": 0},
+	"calm": {"tick_seconds": 0.4, "growth_every": 3, "shield": 5, "cap": CAP_PER_LEVEL},
+	"fast": {"tick_seconds": 0.25, "growth_every": 1, "shield": 0, "cap": CAP_PER_LEVEL},
 }
+## Planets hold CAP_PER_LEVEL ships per level dot and stop growing when full; ships you land on a
+## full planet of yours make it grow, LEVEL_COST per next level (round 8, owner: "bigger planets
+## can host more ships", "planets that can grow"). sim/world.gd cap_per_level / max_growth.
+const CAP_PER_LEVEL := 30
+const LEVEL_COST := 10
+const MAX_LEVEL := 5
 const DEFAULT_PACE := "calm"
 
 enum Outcome { PLAYING, WON, LOST }
@@ -81,6 +87,9 @@ func _init(p_config: Dictionary = {}) -> void:
 	tick_seconds = float(pace["tick_seconds"])
 	world.growth_every = int(pace["growth_every"])
 	world.shield = int(pace["shield"])
+	world.cap_per_level = int(pace.get("cap", 0))
+	world.upgrade_cost_per_level = LEVEL_COST
+	world.max_growth = MAX_LEVEL if world.cap_per_level > 0 else 0
 	# the easier training retry: your starting planets hold more ships
 	var head_start: float = float(config.get("head_start", 1.0))
 	if head_start != 1.0:
@@ -92,6 +101,8 @@ func _init(p_config: Dictionary = {}) -> void:
 	for p in range(2, players + 1):
 		var kind := str(kinds[p - 2]) if p - 2 < kinds.size() else str(config["bot"])
 		bots[p] = make_bot(kind, map_seed * 31 + p)
+		if config.has("bot_grow") and "grow_value" in bots[p]:
+			bots[p].grow_value = float(config["bot_grow"])  # training: how keen bots are to grow planets
 	for p in range(1, players + 1):
 		stats[p] = {"produced": 0, "fleets": 0, "ships_sent": 0, "captured": 0, "lost": 0, "peak_planets": world.planet_count(p)}
 	_record_history()
@@ -132,6 +143,7 @@ static func _ships_for(have: int, fraction: float) -> int:
 ## Advance one tick. Returns presentation events:
 ##   {type: "launch", owner, source, destination, ships}
 ##   {type: "arrival", kind: "capture"|"battle"|"reinforce", planet, owner_before, owner, involved}
+##   {type: "grow", planet, owner, growth}  a planet of `owner` reached level `growth`
 ##   {type: "eliminated", player}
 func step() -> Array:
 	var events: Array = []
@@ -146,8 +158,10 @@ func step() -> Array:
 	_prepared.clear()
 
 	var owners_before := PackedInt32Array()
+	var levels_before := PackedInt32Array()
 	for pl in world.planets:
 		owners_before.append(pl.owner)
+		levels_before.append(pl.growth)
 	var alive_before := world.alive_players()
 	var fleets_before := world.fleets.size()
 	world.apply_orders(orders)
@@ -166,8 +180,8 @@ func step() -> Array:
 			by[f.owner] = int(by.get(f.owner, 0)) + f.ships
 	var defenders := PackedInt32Array()
 	for pl in world.planets:
-		var grows := pl.growth * world.growth_ticks(1)
-		defenders.append(pl.ships + (grows if pl.owner != 0 else 0))
+		var grows := world.garrison_after(pl, 1) - pl.ships
+		defenders.append(pl.ships + grows)
 		if pl.owner != 0:
 			stats[pl.owner]["produced"] += grows
 
@@ -195,6 +209,10 @@ func step() -> Array:
 				stats[pl.owner]["captured"] += 1
 			if owners_before[id] != 0:
 				stats[owners_before[id]]["lost"] += 1
+	for pl in world.planets:
+		if pl.growth > levels_before[pl.id] and pl.owner == owners_before[pl.id]:
+			events.append({"type": "grow", "planet": pl.id, "owner": pl.owner, "growth": pl.growth})
+			stats[pl.owner]["grown"] = int(stats[pl.owner].get("grown", 0)) + pl.growth - levels_before[pl.id]
 	for p in alive_before:
 		if not world.is_alive(p):
 			events.append({"type": "eliminated", "player": p})
