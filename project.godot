@@ -12,8 +12,8 @@ config_version=5
 
 config/name="Planet Wars"
 config/description="A Galcon / Auralux-style planet conquest game, built for friends online."
-config/version="0.0.1"
-run/main_scene="res://game/ui/main_menu_static.tscn"
+config/version="0.2.0"
+run/main_scene="res://game/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -33,4 +33,4 @@ theme/custom="res://game/theme/planet_wars_theme.tres"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
-anti_aliasing/quality/msaa_2d=2
+environment/defaults/default_clear_color=Color(0.027, 0.039, 0.078, 1)

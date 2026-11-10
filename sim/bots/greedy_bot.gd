@@ -38,9 +38,9 @@ func decide(world: World, player: int) -> Array:
 		var best_needed := 0
 		for t in targets:
 			var tt := world.travel_time(src.id, t.id)
-			var needed: int = t.ships + 1 - incoming.get(t.id, 0)
-			if t.owner != 0:
-				needed += t.growth * tt
+			var needed: int = world.ships_to_take(t.id, tt) - incoming.get(t.id, 0)
+			if incoming.get(t.id, 0) > 0:
+				needed += world.shield_of(t)  # a separate arrival meets the shield again
 			if needed < 1:
 				continue  # already covered by ships in flight
 			if needed > surplus:

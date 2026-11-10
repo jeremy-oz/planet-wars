@@ -4,6 +4,70 @@ All notable changes to Planet Wars. Format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Changed — Iteration 2, round 7 (owner: a click sometimes selected, sometimes sent)
+- Clicking is predictable: a click on your own planet always makes it the source (click it again to
+  deselect), and a click on an enemy or grey planet sends there. After a send nothing stays selected,
+  so the next click on your planet picks a new source instead of sending ships to it. To reinforce
+  your own planet, drag onto it; the coach's defence hint now says so.
+- With several planets selected (double-click selects all), clicking one of your own planets sends
+  the others to it: protecting a planet is double-click, then click. With one selected it switches.
+
+### Changed — Iteration 2, round 5 (owner: planets flip too fast, it's a clicking race)
+- New default **Calm** pace: planets grow about 5× slower, fleets fly a bit slower, and every planet
+  you own has a shield (5 ships per level dot) that attackers must break first. Battles take tens of
+  seconds and plans beat fast clicks. The old pace stays as **Fast** in Skirmish (new Pace option).
+  Training is rebalanced for Calm, and Venus's lesson teaches the shield. Attack previews include it.
+- Training maps are designed, symmetric formations (lines, diamonds, rings, triangles, spokes)
+  instead of random scatters, and grow gently: 5, 6, 7, 8, 9, 10, 10, 13, 13 planets (was up to 24).
+
+### Changed — Iteration 2, round 4 (owner: fleets all look the same size)
+- Fleets show their strength: one dot per ship up to 80, and a bigger fleet is wider, longer and
+  glows brighter. Two ships are a faint wisp; a hundred are a wide swarm.
+
+### Added — Iteration 2, round 3 (owner: stuck at Mars)
+- Training coach. Each world opens with a short lesson (one skill: sending, levels, send share,
+  box-select, defending, ...) that waits until you do it, with rings and an arrow on the map.
+  During play the coach warns when a planet is about to fall and, if you sit idle, points at a
+  good move. HINT (or H) asks for one any time. Defeat screens say what to try next.
+- Easier retry: after two losses in a row on a world, EASIER <WORLD> gives you a bigger fleet and
+  a slower enemy; a win is worth one star and opens the next world.
+
+### Changed
+- Training rebalanced for people: commanders make one move per decision and think more slowly;
+  every world is tested winnable at one move every two seconds. Star times re-set to match.
+- Pausing pauses the music. The in-game menu button is labelled MENU.
+
+### Added — Iteration 2, round 2 (owner survey)
+- Training: our solar system. Nine levels from the Moon to Pluto, each with a one-line brief,
+  1–3 stars by time, unlocks in order, progress kept on this computer. TRAINING leads the menu;
+  the custom setup is now SKIRMISH. Result screen shows stars and NEXT / RETRY / TRAINING.
+- Real worlds: 18 NASA surface maps on lit, turning spheres (you are always Earth); Hubble and
+  Webb photographs as dimmed backdrops. `tools/fetch_art.py`, credits in `game/art/CREDITS.md`.
+- Planet levels shown as 1–5 orbiting dots on every planet.
+- Volume sliders have icons; clicking one mutes or restores that channel.
+
+### Changed
+- Captures play in two beats: the defender's count drains to zero, then the planet flips colour
+  and counts up; flash, ripple and chime land on the flip.
+- Ship counts sit under planets so the surface is visible.
+
+### Added — Iteration 2, playable single-player
+- Play against 1–3 bots (Random, Nearest, Greedy) at Relaxed, Normal or Sharp, on Small, Medium,
+  Large or Huge (200-planet) maps from any seed, with a live preview on the setup screen.
+- Controls: click or drag from your planets to a target; shift-click and box-select for several;
+  double-click selects all; right-click or Esc cancels; 1–4 set the send share; space pauses;
+  +/- change speed; scroll or pinch zooms; middle-drag or two-finger pans. Touch works as mouse.
+- Look: GPU-drawn planets (highlight, rim, growth ring) and fleets (particle streams with trails),
+  parallax starfield with nebulae, glow on everything owned.
+- Juice: launch bursts and squash, capture flash with double ripple and pop, battle sparks, screen
+  shake scaled to battle size, breathing planets, hover and selection rings, tweened counts and colours.
+- Audio: synthesised pentatonic capture chimes, calm/tense music pads crossfaded by battle intensity,
+  launch whoosh, impact thud, UI ticks; Music / Effects / Interface volume sliders.
+- Screens: animated main menu with a live bot game, setup, settings, pause, and win/lose with stats
+  and a ships-over-time chart. Every screen change fades through the void.
+- Tooling: `make audio`, `make perf` (frame-time report in `docs/perf/`), `make capture` (screens,
+  60 s recording and frame sheet for the UI review loop).
+
 ### Added — Iteration 1, core simulation
 - `sim/world.gd`: planets, fleets, orders, `tick()`, `apply_orders()`, `winner()`, `state_hash()` per `docs/SPEC.md`.
 - `sim/map_text.gd` (2010 text format in and out), `sim/map_generator.gd` (seeded, ring-of-homes layout).

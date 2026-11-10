@@ -4,7 +4,10 @@ version = "0.0.1"
 description = "Build, CI and dev tooling for Planet Wars. Python lives here and nowhere else."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "numpy>=2.5.4",
+    "pillow>=13.0.0",
+]
 
 [dependency-groups]
 dev = [

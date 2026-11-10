@@ -69,7 +69,9 @@ never modified, so the result is identical everywhere as long as `sqrt` is IEEE-
 Exactly this sequence, nothing interleaved:
 
 1. **Apply orders** for every player (section 2). Order of players: ascending player id.
-2. **Growth.** Every planet with `owner != 0` gains `growth` ships. Neutral planets do not grow.
+2. **Growth.** On ticks where `tick_count % growth_every == 0` (default `growth_every` = 1, every tick),
+   every planet with `owner != 0` gains `growth` ships. Neutral planets do not grow. `growth_every`
+   is a match setting (the pace), not part of the map.
 3. **Advance fleets.** Every fleet's `remaining -= 1`.
 4. **Resolve arrivals.** For every planet with at least one fleet at `remaining == 0`, resolve combat
    (section 5). Arrived fleets are removed.
@@ -94,7 +96,14 @@ Per planet, per tick, after all fleets that arrive this tick are known:
 4. A three-way (or more) arrival uses the same rule: only the two largest forces matter; everyone else
    is annihilated.
 
-This is the 2010 rule set exactly. The tie rule is the one most often got wrong; the test suite covers it.
+**Planet shield (`shield`, a match setting, default 0).** In step 1 the current owner's entry starts
+at `ships + shield * growth` when the owner is a player; neutral planets have no shield. If the owner
+holds, the shield took the first hits: the planet keeps `min(ships + friendly arrivals, top - second)`.
+The shield is not state; it is whole again next tick, so separate arrivals each meet it.
+Reinforcement with no enemy present is a plain merge. `ships_to_take(planet, ticks)` gives what one
+attacking fleet needs: the garrison after growth, plus the shield, plus one.
+
+This is the 2010 rule set exactly (with `shield = 0`). The tie rule is the one most often got wrong; the test suite covers it.
 
 ## 6. Game end
 

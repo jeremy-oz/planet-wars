@@ -65,12 +65,29 @@ font, ever. Both are variable fonts in `game/fonts/`. Minimum rendered size anyw
 - **Soft rectangles.** Panels: radius 16, Deep at 85 % alpha, 1 px Rim at 60 %, a 24 px blurred shadow
   in Void at 50 %. Think frosted glass over space, not a window.
 - **No hard edges.** No 1 px opaque borders, no square corners, no drop shadows with hard offsets.
-- **Planets.** Filled disc in owner colour, 2 px inner ring at 100 % alpha, glow halo. Neutral planets
-  are Ash with no halo. Size scales with growth rate: radius `18 + 6 × growth` px at 1× zoom.
-- **Growth ring.** A thin arc (3 px, owner colour) that fills over one growth interval and resets.
-- **Fleets.** Streams of 2–3 px dots in owner colour with a short additive trail; density ∝ ships.
+- **Planets.** *(Changed in Iteration 2, round 2, at the owner's request: "real planets".)* A real
+  surface map (NASA; see `game/art/CREDITS.md`) on a sphere lit from the upper left, turning slowly.
+  Owned worlds take a 30 % wash of the owner colour, a soft atmosphere halo and a limb glow in that
+  colour; neutral worlds are desaturated grey rock with a faint Ash rim and no halo. You are always
+  Earth; enemy homes are other planets; neutral levels 4–5 are planets, 1–3 are moons. Size scales
+  with level: radius `0.42 + 0.13 × growth` map units (40 px per unit at 1× zoom), capped at 0.36 ×
+  the distance to the nearest neighbour so planets never touch. Lines never get thinner than 2 px.
+- **Level dots.** One dot per level (1–5) on a faint orbit just outside the planet, in owner colour
+  (Ash for neutral), orbiting slowly. Replaces the growth arc: a count of dots reads as "level 3"
+  where an arc's length did not.
+- **Ship counts.** Under the planet, below the orbit (and below the selection ring when selected),
+  Ice on owned and #C9D0DE on neutral, with a dark outline. 15 px minimum on screen.
+- **Backdrops.** Hubble/Webb photographs, cover-fitted, at about 20 % brightness, drifting very
+  slowly, under the parallax star layers.
+- **Fleets.** Streams of 2–4 px dots in owner colour behind a soft glowing head, with a faint additive
+  trail along a gentle curve. Size reads as strength: one dot per ship (up to 80), and width, length,
+  dot size and head glow grow with √ships, so 2 ships are a faint wisp and 100 a wide bright swarm.
+  Drawn on the GPU.
 - **Selection.** Ice ring, 2 px, 6 px outside the planet; pulses 1.0→1.06 over 1.2 s while selected.
 - **Hover.** Halo brightens 20 %, ring appears at 50 % alpha in 120 ms.
+- **Captures.** Two beats: the count drains to zero in the defender's colour (0.5 s, smoothstep),
+  then the colour flips with flash, ripple, pop and chime, and the count rises in the attacker's
+  colour (0.4 s, ease-out).
 
 ## 5. Motion
 
@@ -105,6 +122,10 @@ font, ever. Both are variable fonts in `game/fonts/`. Minimum rendered size anyw
 - At most one accent at a time: the thing you can act on is Ice; everything else is Mist/Dusk.
 - Copy is lowercase-calm in body, uppercase-wide in headings and buttons, never shouty in both.
 - Empty states and errors use the same voice: short, kind, specific ("Lost the server. Rejoining…").
+- Clicks: any other planet sends the selection there and clears it. Your own planet: with one
+  planet selected it switches to it (again deselects, shift adds or removes); with several
+  selected it gathers them onto it. Dragging always sends. The send preview shows on hover exactly
+  when a click would send.
 
 ## 8. Mood board
 
@@ -113,7 +134,13 @@ references are ours to keep in the repo; they stand in for Auralux / Eufloria sc
 not redistribute. Read them in order: the void → planets in the palette → the growth ring → fleet
 streams → a capture ripple → Eufloria-style softness → a playable background → the glass HUD.
 
-## 9. Static design (Iteration 0 sign-off)
+## 9. HUD (Iteration 2)
+
+Matches the signed-off mock: player totals with a share bar top-left; clock, speed, pause and menu
+top-right; send share (25/50/75/100 %) bottom-centre with a one-line contextual hint above it that
+always says what the next click will do. A first-game tip sits top-centre until the first send.
+
+## 10. Static design (Iteration 0 sign-off)
 
 `docs/design/main_menu.png` and `docs/design/game_screen.png` are rendered from the static scenes
 `game/ui/main_menu_static.tscn` and `game/ui/game_screen_mock.tscn` using the theme. Re-render with

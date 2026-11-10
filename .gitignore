@@ -17,3 +17,4 @@ tools/.venv/
 docs/ui-reviews/*/raw/
 # the owner's original copy of the plan; PLAN.md is the tracked version
 Planet Wars — iterative build plan.md
+tools/.cache/

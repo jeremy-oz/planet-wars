@@ -21,6 +21,15 @@ func test_owned_planets_grow_neutral_do_not() -> void:
 	assert_eq(w.tick_count, 1)
 
 
+func test_growth_every_n_ticks_paces_production() -> void:
+	var w := _two_planet_world()
+	w.growth_every = 3
+	for i in range(6):
+		w.tick()
+	assert_eq(w.planets[0].ships, 10 + 2 * 2, "grows on ticks 0 and 3 only")
+	assert_eq(w.planets[1].ships, 10 + 3 * 2)
+
+
 func test_travel_time_is_ceil_of_distance_min_one() -> void:
 	var w := _two_planet_world()
 	w.add_planet(Vector2(3.1, 4), 0, 1, 1)   # 0.1 from planet 1

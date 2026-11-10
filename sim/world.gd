@@ -61,6 +61,12 @@ var fleets: Array[Fleet] = []
 var num_players: int = 0
 var tick_count: int = 0
 var max_ticks: int = DEFAULT_MAX_TICKS
+## Owned planets grow on ticks where tick_count % growth_every == 0 (SPEC §4 step 2). 1 = every tick.
+var growth_every: int = 1
+## Planet shield (SPEC §5): an owned planet adds `shield` ships per growth level to its side of
+## every fight. The shield takes the first hits and is back next tick; it is not state.
+## Neutral planets have none. 0 = the 2010 rule.
+var shield: int = 0
 var seed: int = 0
 ## Seeded RNG for anything in the sim that needs randomness (currently only map generation).
 var rng := RandomNumberGenerator.new()
@@ -91,6 +97,29 @@ func add_fleet(owner: int, ships: int, source: int, destination: int, trip_lengt
 	if owner > num_players:
 		num_players = owner
 	return f
+
+
+## The shield an owned planet adds to its side of a fight: `shield` per growth level.
+func shield_of(planet: Planet) -> int:
+	return shield * planet.growth if planet.owner != 0 else 0
+
+
+## Ships a fleet arriving in `ticks` must carry to take `planet` (ignoring other fleets): the
+## garrison after growth, plus its shield, plus one.
+func ships_to_take(planet: int, ticks: int) -> int:
+	var p := planets[planet]
+	var later := p.ships + (p.growth * growth_ticks(ticks) if p.owner != 0 else 0)
+	return later + shield_of(p) + 1
+
+
+## How many growth steps happen in the next `ticks` ticks (this tick included). With
+## growth_every = 1 that is `ticks`; bots and previews multiply a planet's growth by it.
+func growth_ticks(ticks: int) -> int:
+	if ticks <= 0:
+		return 0
+	var n := maxi(growth_every, 1)
+	var t0 := tick_count
+	return floori(float(t0 + ticks - 1) / n) - floori(float(t0 - 1) / n)
 
 
 # --- geometry -----------------------------------------------------------------------------
@@ -152,9 +181,10 @@ func apply_orders(orders: Array) -> int:
 ## SPEC §4. One step of the simulation with this tick's orders (any player, any order).
 func tick(orders: Array = []) -> void:
 	apply_orders(orders)
-	for p in planets:
-		if p.owner != 0:
-			p.ships += p.growth
+	if tick_count % maxi(growth_every, 1) == 0:
+		for p in planets:
+			if p.owner != 0:
+				p.ships += p.growth
 	var still_flying: Array[Fleet] = []
 	var arrivals: Dictionary = {}  # destination -> Array[Fleet]
 	for f in fleets:
@@ -176,11 +206,13 @@ func tick(orders: Array = []) -> void:
 ## SPEC §5: simultaneous combat. Only the two largest forces matter.
 func _resolve(planet: Planet, arriving: Array) -> void:
 	var force: Dictionary = {}  # owner -> ships
-	force[planet.owner] = planet.ships
+	var home: int = planet.owner
+	var guard := shield_of(planet)
+	force[home] = planet.ships + guard
 	for f: Fleet in arriving:
 		force[f.owner] = force.get(f.owner, 0) + f.ships
 	if force.size() == 1:
-		planet.ships = force[planet.owner]
+		planet.ships = force[home] - guard  # reinforcement: no fight
 		return
 	var owners := force.keys()
 	owners.sort()
@@ -199,6 +231,8 @@ func _resolve(planet: Planet, arriving: Array) -> void:
 		planet.ships = 0  # tie: current owner keeps the planet with nothing on it
 		return
 	planet.ships = top - second
+	if top_owner == home and guard > 0:
+		planet.ships = mini(top - guard, top - second)  # the shield took the first hits
 	planet.owner = top_owner
 
 
