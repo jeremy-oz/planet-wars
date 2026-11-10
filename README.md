@@ -13,9 +13,17 @@ Built for human players online, self-hosted, no telemetry. See `PLAN.md` for the
    git clone https://github.com/jeremy-oz/planet-wars
    cd planet-wars
    ```
-3. Run it: `godot --path .` from the folder (if `godot` is on your `PATH`), or open Godot, choose
-   **Import**, pick `project.godot`, then press **Play** (F5). The first launch takes a few seconds
-   while Godot imports the art.
+3. Run it. Either:
+   - **Godot editor:** open Godot, choose **Import**, pick `project.godot`, then press **Play** (F5).
+     The editor imports the fonts, images and sounds the first time.
+   - **Terminal** (`godot` on your `PATH`): `make play`. Without `make`, import once, then run:
+     ```
+     godot --headless --path . --import
+     godot --path .
+     ```
+   A fresh clone must be imported once before `godot --path .` works: without it the game fails
+   with "Cannot open file 'res://.godot/imported/…'" errors. Run the import again after a
+   `git pull` that adds new art or sounds.
 
 ### The goal
 

@@ -5,9 +5,10 @@ GODOT ?= godot
 ITER  ?= 2
 UV    ?= uv
 
-.PHONY: help import test test-godot test-tools lint ci design clean
+.PHONY: help play import test test-godot test-tools lint ci design clean
 
 help:
+	@echo "make play        import assets if needed, then start the game"
 	@echo "make test        run everything CI runs (import, lint, godot tests, tools tests)"
 	@echo "make test-godot  headless GDScript tests only"
 	@echo "make test-tools  python tooling tests only"
@@ -22,6 +23,11 @@ help:
 
 import:
 	$(GODOT) --headless --path . --import --quit >/dev/null 2>&1
+
+# A fresh clone has no .godot/ import cache, and running the game does not build it.
+play:
+	@test -d .godot/imported || { echo "First run: importing assets (about a minute)..."; $(MAKE) --no-print-directory import; }
+	$(GODOT) --path .
 
 test-godot: import
 	$(GODOT) --headless --path . -s tests/run_tests.gd
